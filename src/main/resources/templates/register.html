@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Hệ thống Mượn trả EAUT</title>
+    <!-- Tích hợp Thymeleaf bằng th:href -->
+    <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}">
+    <!-- Google Fonts for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="login-body">
+    <div class="login-container" style="max-width: 500px;">
+        <div class="login-card">
+            <div class="login-header">
+                <i data-lucide="school" class="login-logo"></i>
+                <h2>Đăng ký tài khoản</h2>
+                <p>Hệ thống Mượn trả Phòng & Thiết bị EAUT</p>
+            </div>
+            
+            <form id="register-form" th:action="@{/register}" method="POST">
+                
+                <div th:if="${errorMessage}" class="alert-error" th:text="${errorMessage}">
+                   <span th:text="${errorMessage}"></span>
+                </div>
+                <div th:if="${successMessage}" class="alert-success" th:text="${successMessage}">
+                   <span th:text="${successMessage}"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="studentId">Mã Sinh viên</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="id-card"></i>
+                        <input type="text" id="studentId" name="maSv" class="form-control" placeholder="Nhập mã sinh viên..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fullName">Họ tên</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="fullName" name="hoTen" class="form-control" placeholder="Nhập họ tên đầy đủ..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="mail"></i>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="Nhập địa chỉ email..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phoneNumber">Số điện thoại</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="phone"></i>
+                        <input type="tel" id="phoneNumber" name="sdt" class="form-control" placeholder="Nhập số điện thoại..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="className">Tên lớp hành chính</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="users"></i>
+                        <input type="text" id="className" name="tenLop" class="form-control" placeholder="Ví dụ: DCCNTT.14.3..." required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="password" name="matKhau" class="form-control" placeholder="Nhập mật khẩu..." required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary btn-block">Đăng ký</button>
+
+                <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-main);">
+                    Đã có tài khoản? <a href="/login.html" th:href="@{/login}" class="forgot-password">Đăng nhập</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tích hợp Thymeleaf bằng th:src -->
+    <script type="module" src="/js/login.js" th:src="@{/js/login.js}"></script>
+</body>
+</html>

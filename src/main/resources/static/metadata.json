@@ -1,0 +1,6 @@
+{
+  "name": "Hệ thống Mượn trả EAUT",
+  "description": "Trang Đăng ký mượn phòng và thiết bị dành cho Sinh viên/Giảng viên trường Đại học Công nghệ Đông Á (EAUT), viết bằng HTML, CSS, và Vanilla JS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

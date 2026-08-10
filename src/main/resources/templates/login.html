@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống Mượn trả EAUT</title>
+    <!-- Tích hợp Thymeleaf bằng th:href -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Google Fonts for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i data-lucide="school" class="login-logo"></i>
+                <h2>Đăng nhập hệ thống</h2>
+                <p>Hệ thống Mượn trả Phòng & Thiết bị EAUT</p>
+            </div>
+            
+            <form id="login-form" th:action="@{/login}" method="POST">
+                
+                <div th:if="${errorMessage}" class="alert-error">
+                    <span th:text="${errorMessage}"></span>
+                </div>
+                <div th:if="${successMessage}" class="alert-success" th:text="${successMessage}">
+                   <span th:text="${successMessage}"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Mã Sinh viên / Giảng viên</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Nhập mã SV/GV..." required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Nhập mật khẩu..." required>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="remember-me">
+                        Ghi nhớ đăng nhập
+                    </label>
+                    <a href="#" class="forgot-password">Quên mật khẩu?</a>
+                </div>
+                
+                <button type="submit" class="btn-primary btn-block">Đăng nhập</button>
+            </form>
+            <div style="text-align: center; margin-top: 15px;">
+                <span>Chưa có tài khoản? </span>
+                <a th:href="@{/register}" style="color: #007bff; text-decoration: none; font-weight: 600;">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tích hợp Thymeleaf bằng th:src -->
+    <script type="module" th:src="@{/js/login.js}"></script>
+</body>
+</html>
