@@ -88,7 +88,7 @@ public class AuthController {
             redirectAttributes.addFlashAttribute("errorMessage", "Đã tồn tại tài khoản với mã sinh viên này!");
             return "redirect:/register";
         }
-        account.setVaiTro("SINHVIEN");
+        account.setVaiTro("ADMIN");
         accountRepository.save(account);
         redirectAttributes.addFlashAttribute("successMessage", "Đăng ký thành công!");
         return "redirect:/login";
