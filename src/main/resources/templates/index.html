@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassHub</title>
+    <title>Trang chủ - ClassHub</title>
     <!-- Tích hợp Thymeleaf bằng th:href -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <!-- Google Fonts for modern look -->
@@ -13,47 +13,43 @@
 </head>
 <body>
     <!-- Header -->
-<header class="header">
-    <div class="header-container">
-        <div class="logo">
-            <i data-lucide="school"></i>
-            <h1>ClassHub</h1>
-        </div>
-        <div class="user-info">
-            <nav class="header-nav">
-                <!-- Chuyển hướng về Trang chủ -->
-                <a href="/" style="text-decoration: none;">
-                    <button type="button" class="btn-nav active-nav" id="btn-home"><i data-lucide="home"></i> Trang chủ</button>
-                </a>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i data-lucide="school"></i>
+                <h1>ClassHub</h1>
+            </div>
+            <div class="user-info">
+                <nav class="header-nav">
+                    <a th:href="@{/}" style="text-decoration: none;">
+                        <button type="button" class="btn-nav active-nav"><i data-lucide="home"></i> Trang chủ</button>
+                    </a>
+                    <a th:href="@{/lich-su}" style="text-decoration: none;">
+                        <button type="button" class="btn-nav"><i data-lucide="clock"></i> Lịch sử mượn</button>
+                    </a>
+                </nav>
+                <div class="divider"></div>
+                <span class="user-greeting" th:if="${session.loggedInUser != null}">
+                    Xin chào, <strong th:text="${session.loggedInUser.hoTen}"></strong>
+                </span>
                 
-                <!-- Chuyển hướng sang trang Lịch sử mượn -->
-                <a href="/lich-su" style="text-decoration: none;">
-                    <button type="button" class="btn-nav" id="btn-history"><i data-lucide="clock"></i> Lịch sử mượn</button>
-                </a>
-            </nav>
-            <div class="divider"></div>
-            <span class="user-greeting" th:if="${session.loggedInUser != null}">
-                Xin chào, <strong th:text="${session.loggedInUser.hoTen}"></strong>
-            </span>
-            
-            <form th:if="${session.loggedInUser == null}" th:action="@{/login}" method="GET" style="display: inline;">
-                <button type="submit" class="btn-logout">
-                    <i data-lucide="log-in"></i> Đăng nhập
-                </button>
-            </form>
-            
-            <form th:if="${session.loggedInUser != null}" th:action="@{/logout}" method="GET" style="display: inline;">
-                <button type="submit" class="btn-logout">
-                    <i data-lucide="log-out"></i> Đăng xuất
-                </button>
-            </form>
+                <form th:if="${session.loggedInUser == null}" th:action="@{/login}" method="GET" style="display: inline;">
+                    <button type="submit" class="btn-logout">
+                        <i data-lucide="log-in"></i> Đăng nhập
+                    </button>
+                </form>
+                
+                <form th:if="${session.loggedInUser != null}" th:action="@{/logout}" method="GET" style="display: inline;">
+                    <button type="submit" class="btn-logout">
+                        <i data-lucide="log-out"></i> Đăng xuất
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
-</header>
+    </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Booking View -->
         <div id="booking-view">
             <!-- Filter Section -->
             <section class="filter-section">
@@ -61,13 +57,9 @@
                     <label for="building-select">Tòa nhà</label>
                     <select id="building-select" class="form-control">
                         <option value="ALL">Chọn tất cả</option>
-                        <!-- Option sẽ được JS tự động đổ vào đây -->
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="date-select">Ngày mượn</label>
-                    <input type="date" id="date-select" class="form-control">
-                </div>
+                
                 <div class="filter-group">
                     <label for="shift-select">Ca học</label>
                     <select id="shift-select" class="form-control">
@@ -83,70 +75,9 @@
                 </div>
             </section>
 
-            <!-- Room List Section -->
             <section class="room-list" id="room-list">
-                
-                <th:block th:each="b : ${buildings}">
-                    
-                    <div class="building-section" th:if="${b != null and not #lists.isEmpty(b?.rooms)}">
-                        <h2 class="building-title">
-                            <i data-lucide="building"></i> <span th:text="${b.tenToaNha}"></span>
-                        </h2>
-
-                        <div class="room-grid">
-                            
-                            <div th:each="room : ${b?.rooms}" 
-                                th:classappend="${room.trangThai != '0'} ? 'borrowed-card' : ''" 
-                                class="room-card">
-                                
-                                <div class="card-header">
-                                    <div class="card-title" th:text="${room.tenPhong}"></div>
-                                    <div class="card-capacity">
-                                        <i data-lucide="users"></i> <span th:text="${room.sucChua}"></span>
-                                    </div>
-                                </div>
-                                
-                                <div class="card-body">
-                                    <div class="equipment-title">Túi đồ bao gồm:</div>
-                                    <ul class="equipment-list">
-                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Mic</li>
-                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Máy chiếu</li>
-                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Điều hòa</li>
-                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Chìa khóa</li>
-                                    </ul>
-                                </div>
-                                
-                                <div class="card-footer">
-                                    <button th:if="${room.trangThai == '0'}" 
-                                            class="btn-primary btn-action" 
-                                            th:attr="onclick=|openModal('${room.maPhong}', '${room.tenPhong}')|">
-                                        Đăng ký mượn
-                                    </button>
-                                    
-                                    <button th:unless="${room.trangThai == '0'}" 
-                                            class="btn-danger btn-action" 
-                                            th:attr="onclick=|openCancelModal('${room.maPhong}', '${room.tenPhong}')|">
-                                        <i data-lucide="x-circle"></i> Hủy đăng ký
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </th:block>
-
+                <div class="empty-state">Đang tải danh sách phòng...</div>
             </section>
-            
-        </div>
-
-        <!-- History View -->
-        <div id="history-view" class="hidden">
-            <div class="history-header">
-                <h2>Lịch sử mượn phòng & thiết bị</h2>
-            </div>
-            <div id="history-list">
-                <!-- History items injected by JS -->
-            </div>
         </div>
     </main>
 
@@ -158,7 +89,7 @@
                 <button class="btn-close" id="btn-close-modal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <p>Bạn có chắc chắn muốn đăng ký mượn <strong id="modal-room-name"></strong>?</p>
+                <p>Bạn có chắc chắn muốn đăng ký mượn <strong id="modal-room-name"></strong> sử dụng trong ngày hôm nay?</p>
                 <div class="modal-details">
                     <p><strong>Ngày:</strong> <span id="modal-date"></span></p>
                     <p><strong>Ca:</strong> <span id="modal-shift"></span></p>
@@ -171,31 +102,12 @@
         </div>
     </div>
 
-    <!-- Cancel Modal -->
-    <div class="modal-backdrop" id="cancel-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Xác nhận hủy mượn</h2>
-                <button class="btn-close" id="btn-close-cancel-modal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <p>Bạn có chắc chắn muốn hủy đăng ký mượn <strong id="cancel-modal-room-name"></strong> không?</p>
-                <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Phòng sẽ được trả lại trạng thái trống cho người khác mượn.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="btn-cancel-cancel-modal">Quay lại</button>
-                <button class="btn-danger" id="btn-confirm-cancel-modal">Xác nhận hủy</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div id="toast-icon-container"></div>
         <span id="toast-message"></span>
     </div>
 
-    <!-- Tích hợp Thymeleaf bằng th:src -->
     <script type="module" th:src="@{/js/home.js}"></script>
 </body>
 </html>

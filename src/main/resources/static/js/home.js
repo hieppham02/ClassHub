@@ -1,11 +1,7 @@
-// Global State
 let allBuildings = [];
 let currentSelectedRoomId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    setDefaultDate();
-    
-    // Gọi API của Spring Boot để lấy danh sách Tòa nhà & Phòng học
     fetch('/api/buildings')
         .then(response => response.json())
         .then(data => {
@@ -16,23 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => console.error('Lỗi lấy dữ liệu từ API:', error));
 });
 
-// Khởi tạo Lucide Icons
 function initIcons() {
     if (window.lucide) {
         lucide.createIcons();
     }
 }
 
-// Set mặc định ngày hôm nay cho ô Input Date
-function setDefaultDate() {
-    const dateInput = document.getElementById('date-select');
-    if(dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-    }
-}
-
-// Đổ dữ liệu Tòa nhà vào thẻ <select>
 function populateBuildingFilter(buildings) {
     const select = document.getElementById('building-select');
     select.innerHTML = '<option value="ALL">Chọn tất cả</option>';
@@ -42,7 +27,6 @@ function populateBuildingFilter(buildings) {
     });
 }
 
-// Render dữ liệu ra màn hình
 function renderRooms(buildingsToRender) {
     const roomList = document.getElementById('room-list');
     roomList.innerHTML = '';
@@ -72,7 +56,6 @@ function renderRooms(buildingsToRender) {
             const card = document.createElement('div');
             card.className = 'room-card' + (isBorrowed ? ' borrowed-card' : '');
             
-            // Logic Nút bấm: Đang mượn thì làm mờ không cho bấm, Trống thì cho mượn
             let actionButton = '';
             if (isBorrowed) {
                 actionButton = `<button class="btn-secondary btn-action" disabled style="cursor: not-allowed; opacity: 0.7;">
@@ -113,7 +96,6 @@ function renderRooms(buildingsToRender) {
     initIcons();
 }
 
-// Logic Lọc theo Tòa nhà
 function applyFilters() {
     const selectedBuildingCode = document.getElementById('building-select').value;
     
@@ -125,23 +107,23 @@ function applyFilters() {
     renderRooms(filtered);
 }
 
-// Modal Logic - Mở Form Xác nhận
 function openModal(roomId, roomName) {
     currentSelectedRoomId = roomId;
     document.getElementById('modal-room-name').textContent = roomName;
     
-    const selectedDate = document.getElementById('date-select').value;
+    const todayISO = new Date().toISOString().split('T')[0];
+    const dateObj = new Date(todayISO);
+    
     const shiftSelect = document.getElementById('shift-select');
     const selectedShiftText = shiftSelect.options[shiftSelect.selectedIndex].text;
     
-    const dateObj = new Date(selectedDate);
     document.getElementById('modal-date').textContent = dateObj.toLocaleDateString('vi-VN');
     document.getElementById('modal-shift').textContent = selectedShiftText;
 
     document.getElementById('borrow-modal').classList.add('active');
 }
 
-// Modal Logic - Đóng Form
+
 function closeModal() {
     currentSelectedRoomId = null;
     document.getElementById('borrow-modal').classList.remove('active');
@@ -150,7 +132,8 @@ function closeModal() {
 // Gọi API POST để mượn phòng
 function confirmBorrow() {
     if (currentSelectedRoomId) {
-        const selectedDate = document.getElementById('date-select').value;
+        
+        const selectedDate = new Date().toISOString().split('T')[0];
         const shiftValue = document.getElementById('shift-select').value;
         
         const requestData = {
@@ -159,22 +142,23 @@ function confirmBorrow() {
             caMuon: parseInt(shiftValue)
         };
 
-        fetch('/api/bookings', {
+       fetch('/api/bookings', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData)
         })
         .then(response => {
-            if (!response.ok) throw new Error('Có lỗi xảy ra hoặc chưa đăng nhập');
+            if (response.status === 401) {
+                window.location.href = '/login';
+                throw new Error('Chưa đăng nhập');
+            }
+            if (!response.ok) throw new Error('Có lỗi xảy ra');
             return response.json();
         })
         .then(data => {
             closeModal();
             showToast('Đăng ký mượn phòng thành công!', 'success');
             
-            // Gọi lại API để load màu nền thẻ phòng (từ trắng sang đỏ)
             fetch('/api/buildings')
                 .then(res => res.json())
                 .then(newData => {
@@ -184,13 +168,13 @@ function confirmBorrow() {
         })
         .catch(error => {
             closeModal();
-            showToast('Vui lòng đăng nhập', 'danger');
+            showToast(error.message === 'Chưa đăng nhập' ? 'Vui lòng đăng nhập' : 'Lỗi không thể mượn phòng', 'danger');
             console.error(error);
         });
     }
 }
 
-// Toast Thông báo góc dưới màn hình
+// Toast Thông báo
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const toastIconContainer = document.getElementById('toast-icon-container');
@@ -213,24 +197,19 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Cài đặt các sự kiện (Event Listeners)
 document.addEventListener('DOMContentLoaded', () => {
-    // Sự kiện Modal
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
     document.getElementById('btn-confirm-modal').addEventListener('click', confirmBorrow);
     
-    // Đóng Modal khi click ra khoảng trống bên ngoài
     window.addEventListener('click', (e) => {
         if (e.target.id === 'borrow-modal') closeModal();
     });
 
-    // Sự kiện Nút Tìm kiếm
     document.getElementById('btn-search').addEventListener('click', () => {
         applyFilters();
         showToast('Đã cập nhật danh sách phòng', 'success');
     });
 });
 
-// Expose hàm ra toàn cục để HTML gọi được (onclick)
 window.openModal = openModal;

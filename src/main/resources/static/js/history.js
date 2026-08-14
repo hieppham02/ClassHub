@@ -1,65 +1,69 @@
-document.addEventListener('DOMContentLoaded', () => {
-    fetchHistory();
-});
+document.addEventListener('DOMContentLoaded', () => { //[cite: 18]
+    fetchHistory(); //[cite: 18]
+}); //[cite: 18]
 
-function initIcons() {
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-}
+function initIcons() { //[cite: 18]
+    if (window.lucide) { //[cite: 18]
+        lucide.createIcons(); //[cite: 18]
+    } //[cite: 18]
+} //[cite: 18]
 
-const shiftMap = {
-    1: "Ca 1 (07:00 - 09:30)",
-    2: "Ca 2 (09:30 - 12:00)",
-    3: "Ca 3 (13:00 - 15:30)",
-    4: "Ca 4 (15:30 - 18:00)",
-    5: "Ca 5 (18:00 - 20:30)"
-};
+const shiftMap = { //[cite: 18]
+    1: "Ca 1 (07:00 - 09:30)", //[cite: 18]
+    2: "Ca 2 (09:30 - 12:00)", //[cite: 18]
+    3: "Ca 3 (13:00 - 15:30)", //[cite: 18]
+    4: "Ca 4 (15:30 - 18:00)", //[cite: 18]
+    5: "Ca 5 (18:00 - 20:30)" //[cite: 18]
+}; //[cite: 18]
 
-function fetchHistory() {
+function fetchHistory() { //[cite: 18]
     fetch('/api/lich-su')
         .then(response => {
-            if (!response.ok) throw new Error('Chưa đăng nhập hoặc lỗi server');
+            if (response.status === 401) {
+                window.location.href = '/login';
+                throw new Error('Chưa đăng nhập');
+            }
+            if (!response.ok) throw new Error('Lỗi server');
             return response.json();
         })
         .then(data => {
-            renderHistory(data);
+            renderHistory(data); 
         })
-        .catch(error => {
-            document.getElementById('history-list').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu. Vui lòng đăng nhập lại!</div>';
-            console.error(error);
+        .catch(error => { 
+            document.getElementById('history-list').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu. Vui lòng đăng nhập lại!</div>'; 
+            console.error(error); 
         });
-}
+} //[cite: 18]
 
-function renderHistory(histories) {
-    const container = document.getElementById('history-list');
-    container.innerHTML = '';
+function renderHistory(histories) { //[cite: 18]
+    const container = document.getElementById('history-list'); //[cite: 18]
+    container.innerHTML = ''; //[cite: 18]
     
-    if (!histories || histories.length === 0) {
-        container.innerHTML = '<div class="empty-state">Chưa có lịch sử mượn phòng nào.</div>';
-        return;
-    }
+    if (!histories || histories.length === 0) { //[cite: 18]
+        container.innerHTML = '<div class="empty-state">Chưa có lịch sử mượn phòng nào.</div>'; //[cite: 18]
+        return; //[cite: 18]
+    } //[cite: 18]
     
-    histories.forEach(record => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
+    histories.forEach(record => { //[cite: 18]
+        const item = document.createElement('div'); //[cite: 18]
+        item.className = 'history-item'; //[cite: 18]
         
-        // Setup Badge Trạng thái
+        // Setup Badge Trạng thái (Cập nhật logic Đã trả)
         const statusBadge = record.trangThai === 'ACTIVE' 
             ? `<span class="badge badge-active">Đang mượn</span>`
-            : `<span class="badge badge-canceled">Đã hủy</span>`;
+            : `<span class="badge badge-canceled" style="background: #E2E8F0; color: #4A5568;">Đã trả</span>`;
             
-        // Setup Nút Hủy
+        // Setup Nút Trả phòng (Cập nhật giao diện & hàm gọi)
         let actionBtn = '';
         if (record.trangThai === 'ACTIVE') {
-            actionBtn = `<button class="btn-danger btn-sm" onclick="cancelBooking(${record.id})">
-                <i data-lucide="x-circle"></i> Hủy
+            actionBtn = `<button class="btn-primary btn-sm" onclick="returnBooking(${record.id})">
+                <i data-lucide="check-circle"></i> Trả thiết bị
             </button>`;
         }
 
-        const borrowDate = new Date(record.ngayMuon).toLocaleDateString('vi-VN');
-        const createdTime = new Date(record.thoiGianTao).toLocaleString('vi-VN');
-        const shiftText = shiftMap[record.caMuon] || `Ca ${record.caMuon}`;
+        const borrowDate = new Date(record.ngayMuon).toLocaleDateString('vi-VN'); //[cite: 18]
+        const createdTime = new Date(record.thoiGianTao).toLocaleString('vi-VN'); //[cite: 18]
+        const shiftText = shiftMap[record.caMuon] || `Ca ${record.caMuon}`; //[cite: 18]
 
         item.innerHTML = `
             <div class="history-info">
@@ -77,46 +81,46 @@ function renderHistory(histories) {
                 ${actionBtn}
             </div>
         `;
-        container.appendChild(item);
-    });
+        container.appendChild(item); //[cite: 18]
+    }); //[cite: 18]
     
-    initIcons();
-}
+    initIcons(); //[cite: 18]
+} //[cite: 18]
 
-window.cancelBooking = function(id) {
-    if (confirm('Bạn có chắc chắn muốn hủy mượn phòng này?')) {
-        fetch(`/api/bookings/${id}/cancel`, {
+window.returnBooking = function(id) {
+    if (confirm('Xác nhận trả phòng và thiết bị?')) {
+        fetch(`/api/bookings/${id}/return`, {
             method: 'POST'
         })
         .then(response => {
-            if (!response.ok) throw new Error('Lỗi hủy phòng');
+            if (!response.ok) throw new Error('Lỗi');
             return response.json();
         })
         .then(data => {
-            showToast('Hủy phòng thành công!', 'danger');
-            fetchHistory(); // Load lại danh sách ngay lập tức
+            showToast('Trả thiết bị thành công!', 'success'); 
+            fetchHistory();
         })
         .catch(error => {
-            showToast('Có lỗi xảy ra, không thể hủy!', 'danger');
+            showToast('Có lỗi xảy ra, không thể trả!', 'danger');
         });
     }
 }
 
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    const toastIconContainer = document.getElementById('toast-icon-container');
+function showToast(message, type = 'success') { //[cite: 18]
+    const toast = document.getElementById('toast'); //[cite: 18]
+    const toastIconContainer = document.getElementById('toast-icon-container'); //[cite: 18]
     
-    document.getElementById('toast-message').textContent = message;
+    document.getElementById('toast-message').textContent = message; //[cite: 18]
     
-    if (type === 'danger') {
-        toast.style.backgroundColor = 'var(--danger)';
-        toastIconContainer.innerHTML = '<i data-lucide="alert-circle"></i>';
-    } else {
-        toast.style.backgroundColor = 'var(--success)';
-        toastIconContainer.innerHTML = '<i data-lucide="check-circle"></i>';
-    }
+    if (type === 'danger') { //[cite: 18]
+        toast.style.backgroundColor = 'var(--danger)'; //[cite: 18]
+        toastIconContainer.innerHTML = '<i data-lucide="alert-circle"></i>'; //[cite: 18]
+    } else { //[cite: 18]
+        toast.style.backgroundColor = 'var(--success)'; //[cite: 18]
+        toastIconContainer.innerHTML = '<i data-lucide="check-circle"></i>'; //[cite: 18]
+    } //[cite: 18]
     
-    initIcons(); 
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 3000);
-}
+    initIcons();  //[cite: 18]
+    toast.classList.add('show'); //[cite: 18]
+    setTimeout(() => { toast.classList.remove('show'); }, 3000); //[cite: 18]
+} //[cite: 18]
