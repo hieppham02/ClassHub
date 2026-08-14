@@ -1,22 +1,20 @@
-document.addEventListener('DOMContentLoaded', () => { //[cite: 18]
-    fetchHistory(); //[cite: 18]
-}); //[cite: 18]
+let currentReturnId = null;
 
-function initIcons() { //[cite: 18]
-    if (window.lucide) { //[cite: 18]
-        lucide.createIcons(); //[cite: 18]
-    } //[cite: 18]
-} //[cite: 18]
+const shiftMap = {  
+    1: "Ca 1 (07:00 - 09:30)",  
+    2: "Ca 2 (09:30 - 12:00)",  
+    3: "Ca 3 (13:00 - 15:30)",  
+    4: "Ca 4 (15:30 - 18:00)",  
+    5: "Ca 5 (18:00 - 20:30)"  
+};  
 
-const shiftMap = { //[cite: 18]
-    1: "Ca 1 (07:00 - 09:30)", //[cite: 18]
-    2: "Ca 2 (09:30 - 12:00)", //[cite: 18]
-    3: "Ca 3 (13:00 - 15:30)", //[cite: 18]
-    4: "Ca 4 (15:30 - 18:00)", //[cite: 18]
-    5: "Ca 5 (18:00 - 20:30)" //[cite: 18]
-}; //[cite: 18]
+function initIcons() {  
+    if (window.lucide) {  
+        lucide.createIcons();  
+    }  
+}  
 
-function fetchHistory() { //[cite: 18]
+function fetchHistory() {  
     fetch('/api/lich-su')
         .then(response => {
             if (response.status === 401) {
@@ -33,37 +31,46 @@ function fetchHistory() { //[cite: 18]
             document.getElementById('history-list').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu. Vui lòng đăng nhập lại!</div>'; 
             console.error(error); 
         });
-} //[cite: 18]
+}  
 
-function renderHistory(histories) { //[cite: 18]
-    const container = document.getElementById('history-list'); //[cite: 18]
-    container.innerHTML = ''; //[cite: 18]
+function renderHistory(histories) {  
+    const container = document.getElementById('history-list');  
+    container.innerHTML = '';  
     
-    if (!histories || histories.length === 0) { //[cite: 18]
-        container.innerHTML = '<div class="empty-state">Chưa có lịch sử mượn phòng nào.</div>'; //[cite: 18]
-        return; //[cite: 18]
-    } //[cite: 18]
+    if (!histories || histories.length === 0) {  
+        container.innerHTML = '<div class="empty-state">Chưa có lịch sử mượn phòng nào.</div>';  
+        return;  
+    }  
     
-    histories.forEach(record => { //[cite: 18]
-        const item = document.createElement('div'); //[cite: 18]
-        item.className = 'history-item'; //[cite: 18]
+    histories.forEach(record => {  
+        const item = document.createElement('div');  
+        item.className = 'history-item';  
         
-        // Setup Badge Trạng thái (Cập nhật logic Đã trả)
         const statusBadge = record.trangThai === 'ACTIVE' 
             ? `<span class="badge badge-active">Đang mượn</span>`
             : `<span class="badge badge-canceled" style="background: #E2E8F0; color: #4A5568;">Đã trả</span>`;
             
-        // Setup Nút Trả phòng (Cập nhật giao diện & hàm gọi)
         let actionBtn = '';
+        let otpSection = '';
         if (record.trangThai === 'ACTIVE') {
-            actionBtn = `<button class="btn-primary btn-sm" onclick="returnBooking(${record.id})">
+            actionBtn = `<button class="btn-primary btn-sm" onclick="openReturnModal(${record.id})">
                 <i data-lucide="check-circle"></i> Trả thiết bị
             </button>`;
+
+            otpSection = `
+                <div style="margin-top: 10px; background: #E6FFFA; padding: 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #B2F5EA;">
+                    <span style="color: #234E52; font-weight: 600;">Mã mở cửa:</span>
+                    <strong style="font-size: 1.2rem; letter-spacing: 2px; color: #319795;" id="otp-text-${record.id}">${record.otp}</strong>
+                    <button onclick="refreshOtp(${record.id})" style="background: none; border: none; cursor: pointer; color: #319795; padding: 2px;" title="Tạo mã mới">
+                        <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </div>
+            `;
         }
 
-        const borrowDate = new Date(record.ngayMuon).toLocaleDateString('vi-VN'); //[cite: 18]
-        const createdTime = new Date(record.thoiGianTao).toLocaleString('vi-VN'); //[cite: 18]
-        const shiftText = shiftMap[record.caMuon] || `Ca ${record.caMuon}`; //[cite: 18]
+        const borrowDate = new Date(record.ngayMuon).toLocaleDateString('vi-VN');
+        const createdTime = new Date(record.thoiGianTao).toLocaleString('vi-VN');
+        const shiftText = shiftMap[record.caMuon] || `Ca ${record.caMuon}`;  
 
         item.innerHTML = `
             <div class="history-info">
@@ -75,21 +82,32 @@ function renderHistory(histories) { //[cite: 18]
                     <span><i data-lucide="calendar"></i> ${borrowDate}</span>
                     <span><i data-lucide="clock"></i> ${shiftText}</span>
                     <span><i data-lucide="info"></i> Đã đặt lúc: ${createdTime}</span>
+                    ${otpSection}
                 </div>
             </div>
             <div class="history-action">
                 ${actionBtn}
             </div>
         `;
-        container.appendChild(item); //[cite: 18]
-    }); //[cite: 18]
+        container.appendChild(item);  
+    });  
     
-    initIcons(); //[cite: 18]
-} //[cite: 18]
+    initIcons();  
+}
 
-window.returnBooking = function(id) {
-    if (confirm('Xác nhận trả phòng và thiết bị?')) {
-        fetch(`/api/bookings/${id}/return`, {
+function openReturnModal(id) {
+    currentReturnId = id;
+    document.getElementById('return-modal').classList.add('active');
+}
+
+function closeReturnModal() {
+    currentReturnId = null;
+    document.getElementById('return-modal').classList.remove('active');
+}
+
+function confirmReturn() {
+    if (currentReturnId) {
+        fetch(`/api/bookings/${currentReturnId}/return`, {
             method: 'POST'
         })
         .then(response => {
@@ -97,30 +115,67 @@ window.returnBooking = function(id) {
             return response.json();
         })
         .then(data => {
+            closeReturnModal();
             showToast('Trả thiết bị thành công!', 'success'); 
-            fetchHistory();
+            fetchHistory(); 
         })
         .catch(error => {
+            closeReturnModal();
             showToast('Có lỗi xảy ra, không thể trả!', 'danger');
         });
     }
 }
 
-function showToast(message, type = 'success') { //[cite: 18]
-    const toast = document.getElementById('toast'); //[cite: 18]
-    const toastIconContainer = document.getElementById('toast-icon-container'); //[cite: 18]
+function showToast(message, type = 'success') {  
+    const toast = document.getElementById('toast');  
+    const toastIconContainer = document.getElementById('toast-icon-container');  
     
-    document.getElementById('toast-message').textContent = message; //[cite: 18]
+    document.getElementById('toast-message').textContent = message;  
     
-    if (type === 'danger') { //[cite: 18]
-        toast.style.backgroundColor = 'var(--danger)'; //[cite: 18]
-        toastIconContainer.innerHTML = '<i data-lucide="alert-circle"></i>'; //[cite: 18]
-    } else { //[cite: 18]
-        toast.style.backgroundColor = 'var(--success)'; //[cite: 18]
-        toastIconContainer.innerHTML = '<i data-lucide="check-circle"></i>'; //[cite: 18]
-    } //[cite: 18]
+    if (type === 'danger') {  
+        toast.style.backgroundColor = 'var(--danger)';  
+        toastIconContainer.innerHTML = '<i data-lucide="alert-circle"></i>';  
+    } else {  
+        toast.style.backgroundColor = 'var(--success)';  
+        toastIconContainer.innerHTML = '<i data-lucide="check-circle"></i>';  
+    }  
     
-    initIcons();  //[cite: 18]
-    toast.classList.add('show'); //[cite: 18]
-    setTimeout(() => { toast.classList.remove('show'); }, 3000); //[cite: 18]
-} //[cite: 18]
+    initIcons();   
+    toast.classList.add('show');  
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);  
+}  
+
+window.refreshOtp = function(id) {
+    fetch(`/api/bookings/${id}/refresh-otp`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Không thể làm mới mã');
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById(`otp-text-${id}`).textContent = data.newOtp;
+        showToast('Đã tạo mã OTP mới!', 'success');
+    })
+    .catch(error => {
+        showToast('Lỗi: Không thể lấy mã mới!', 'danger');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {  
+    fetchHistory();  
+
+    const closeReturnBtn = document.getElementById('btn-close-return-modal');
+    const cancelReturnBtn = document.getElementById('btn-cancel-return-modal');
+    const confirmReturnBtn = document.getElementById('btn-confirm-return-modal');
+
+    if (closeReturnBtn) closeReturnBtn.addEventListener('click', closeReturnModal);
+    if (cancelReturnBtn) cancelReturnBtn.addEventListener('click', closeReturnModal);
+    if (confirmReturnBtn) confirmReturnBtn.addEventListener('click', confirmReturn);
+
+    window.addEventListener('click', (e) => {
+        if (e.target.id === 'return-modal') closeReturnModal();
+    });
+});
+
+window.openReturnModal = openReturnModal;

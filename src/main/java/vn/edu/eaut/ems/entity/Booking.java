@@ -32,10 +32,13 @@ public class Booking {
     @Column(name = "thoi_gian_tao", insertable = false, updatable = false)
     private LocalDateTime thoiGianTao;
 
+    @Column(name = "otp")
+    private String otp;
+
     public Booking() {}
 
     public Booking(Integer id, Account account, Room room, LocalDate ngayMuon, Integer caMuon, String trangThai,
-            LocalDateTime thoiGianTao) {
+            LocalDateTime thoiGianTao, String otp) {
         this.id = id;
         this.account = account;
         this.room = room;
@@ -43,6 +46,7 @@ public class Booking {
         this.caMuon = caMuon;
         this.trangThai = trangThai;
         this.thoiGianTao = thoiGianTao;
+        this.otp = otp;
     }
 
     public Integer getId() {
@@ -100,4 +104,7 @@ public class Booking {
     public void setThoiGianTao(LocalDateTime thoiGianTao) {
         this.thoiGianTao = thoiGianTao;
     }
+
+    public String getOtp() { return otp; }
+    public void setOtp(String otp) { this.otp = otp; }
 }

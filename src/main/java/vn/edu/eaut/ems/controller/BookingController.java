@@ -35,17 +35,14 @@ public class BookingController {
             return ResponseEntity.status(401).body(Map.of("message", "Chưa đăng nhập!"));
         }
 
-        // 2. Tìm phòng trong Database
         Room room = roomRepository.findById(request.getMaPhong()).orElse(null);
         if (room == null || !room.getTrangThai().equals("0")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Phòng không tồn tại hoặc đã có người mượn!"));
         }
 
-        // 3. Cập nhật trạng thái phòng thành Đang mượn ('1')
         room.setTrangThai("1");
         roomRepository.save(room);
 
-        // 4. Ghi vào lịch sử mượn
         Booking booking = new Booking();
         booking.setAccount(currentUser);
         booking.setRoom(room);
@@ -54,10 +51,15 @@ public class BookingController {
         booking.setTrangThai("ACTIVE");
         bookingRepository.save(booking);
 
+        booking.setTrangThai("ACTIVE");
+        
+        String randomOtp = String.format("%06d", new Random().nextInt(999999));
+        booking.setOtp(randomOtp);
+        bookingRepository.save(booking);
+
         return ResponseEntity.ok(Map.of("message", "Đăng ký mượn phòng thành công!"));
     }
 
-    // Đổi endpoint thành /return
     @PostMapping("/bookings/{id}/return")
     public ResponseEntity<?> returnBooking(@PathVariable Integer id, HttpSession session) {
         Account currentUser = (Account) session.getAttribute("loggedInUser");
@@ -69,14 +71,11 @@ public class BookingController {
             return ResponseEntity.badRequest().body(Map.of("message", "Không hợp lệ!"));
         }
 
-        // Nếu đang mượn thì cho phép TRẢ
         if ("ACTIVE".equals(booking.getTrangThai())) {
             
-            // Đổi trạng thái phiếu mượn thành COMPLETED (Đã trả)
             booking.setTrangThai("COMPLETED");
             bookingRepository.save(booking);
 
-            // Trả lại phòng (Đổi trạng thái phòng về 0 - Trống)
             Room room = booking.getRoom();
             if (room != null) {
                 room.setTrangThai("0");
@@ -86,5 +85,24 @@ public class BookingController {
         }
 
         return ResponseEntity.badRequest().body(Map.of("message", "Phiếu mượn này đã kết thúc!"));
+    }
+
+    @PostMapping("/bookings/{id}/refresh-otp")
+    @ResponseBody
+    public ResponseEntity<?> refreshOtp(@PathVariable Integer id, HttpSession session) {
+        Account currentUser = (Account) session.getAttribute("loggedInUser");
+        if (currentUser == null) return ResponseEntity.status(401).build();
+
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null || !booking.getAccount().getMaSv().equals(currentUser.getMaSv()) || !"ACTIVE".equals(booking.getTrangThai())) {   
+            return ResponseEntity.badRequest().body(Map.of("message", "Không thể làm mới mã!"));
+        }
+
+        String newOtp = String.format("%06d", new Random().nextInt(999999));
+        booking.setOtp(newOtp);
+        bookingRepository.save(booking);
+        System.out.println("Mã OTP: " + newOtp);
+
+        return ResponseEntity.ok(Map.of("newOtp", newOtp));
     }
 }

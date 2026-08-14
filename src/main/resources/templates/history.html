@@ -50,6 +50,22 @@
         <span id="toast-message"></span>
     </div>
 
+    <div class="modal-backdrop" id="return-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Xác nhận trả thiết bị</h2>
+                <button class="btn-close" id="btn-close-return-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xác nhận trả phòng và toàn bộ thiết bị đi kèm không?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-return-modal">Hủy</button>
+                <button class="btn-primary" id="btn-confirm-return-modal">Xác nhận trả</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" th:src="@{/js/history.js}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

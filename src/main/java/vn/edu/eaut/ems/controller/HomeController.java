@@ -63,6 +63,7 @@ public class HomeController {
             record.put("caMuon", b.getCaMuon());
             record.put("trangThai", b.getTrangThai());
             record.put("thoiGianTao", b.getThoiGianTao());
+            record.put("otp", b.getOtp());
 
             Map<String, Object> roomData = new HashMap<>();
             roomData.put("tenPhong", b.getRoom().getTenPhong());
