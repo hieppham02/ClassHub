@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử mượn</title>
+    <!-- Tích hợp Thymeleaf bằng th:href -->
+    <link rel="stylesheet" href="/src/style.css" th:href="@{/style/style.css}">
+    <!-- Google Fonts for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i data-lucide="school"></i>
+                <h1>ClasHub</h1>
+            </div>
+            <div class="user-info">
+                <nav class="header-nav">
+                    <a href="/index.html" th:href="@{/}" class="btn-nav" style="text-decoration: none;"><i data-lucide="home"></i> Trang chủ</a>
+                    <a href="/history.html" th:href="@{/history}" class="btn-nav active-nav" style="text-decoration: none;"><i data-lucide="clock"></i> Lịch sử mượn</a>
+                </nav>
+                <div class="divider"></div>
+                <span class="user-greeting">Xin chào, <strong th:text="${userName}">Sinh viên</strong></span>
+                <a href="/login.html" th:href="@{/logout}" class="btn-logout" style="text-decoration: none;"><i data-lucide="log-out"></i> Đăng xuất</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div id="history-view">
+            <div class="history-header">
+                <h2>Lịch sử mượn phòng & thiết bị</h2>
+            </div>
+            
+            <!-- Danh sách lịch sử -->
+            <div id="history-list">
+                <!-- Fallback nếu không có dữ liệu (Thymeleaf conditions) -->
+                <div th:if="${#lists.isEmpty(histories)}" class="empty-state">
+                    Chưa có lịch sử mượn phòng nào.
+                </div>
+
+                <!-- Lặp qua danh sách lịch sử mượn trả -->
+                <div th:each="record : ${histories}" class="history-item">
+                    <div class="history-info">
+                        <div class="history-title">
+                            <h4 th:text="${record.roomName + ' - ' + record.building}">Phòng 501 - Tòa A</h4>
+                            <!-- Badge Status -->
+                            <span th:if="${record.status == 'ACTIVE'}" class="badge badge-active">Đang mượn</span>
+                            <span th:if="${record.status == 'CANCELED'}" class="badge badge-canceled">Đã hủy</span>
+                        </div>
+                        <div class="history-details">
+                            <span><i data-lucide="calendar"></i> <span th:text="${#temporals.format(record.date, 'dd/MM/yyyy')}">15/08/2026</span></span>
+                            <span><i data-lucide="clock"></i> <span th:text="${record.shiftName}">Ca 1 (07:00 - 09:30)</span></span>
+                            <span><i data-lucide="info"></i> Đã đặt lúc: <span th:text="${#temporals.format(record.createdAt, 'dd/MM/yyyy HH:mm')}">14/08/2026 14:30</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="history-action" th:if="${record.status == 'ACTIVE'}">
+                        <!-- Form hủy dành cho Spring Boot -->
+                        <form th:action="@{/history/cancel/{id}(id=${record.id})}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy mượn phòng này?');">
+                            <button type="submit" class="btn-danger btn-sm">
+                                <i data-lucide="x-circle"></i> Hủy
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Dữ liệu tĩnh mẫu cho Frontend (ẩn nếu có dữ liệu từ Spring Boot) -->
+                <div th:unless="${histories}" class="history-item">
+                    <div class="history-info">
+                        <div class="history-title">
+                            <h4>Phòng 501 - Tòa A</h4>
+                            <span class="badge badge-active">Đang mượn</span>
+                        </div>
+                        <div class="history-details">
+                            <span><i data-lucide="calendar"></i> 15/08/2026</span>
+                            <span><i data-lucide="clock"></i> Ca 1 (07:00 - 09:30)</span>
+                            <span><i data-lucide="info"></i> Đã đặt lúc: 14/08/2026 14:30</span>
+                        </div>
+                    </div>
+                    <div class="history-action">
+                        <form action="#" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy mượn phòng này?');">
+                            <button type="submit" class="btn-danger btn-sm">
+                                <i data-lucide="x-circle"></i> Hủy
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div th:unless="${histories}" class="history-item">
+                    <div class="history-info">
+                        <div class="history-title">
+                            <h4>Phòng 201 - Tòa B</h4>
+                            <span class="badge badge-canceled">Đã hủy</span>
+                        </div>
+                        <div class="history-details">
+                            <span><i data-lucide="calendar"></i> 14/08/2026</span>
+                            <span><i data-lucide="clock"></i> Ca 3 (13:00 - 15:30)</span>
+                            <span><i data-lucide="info"></i> Đã đặt lúc: 13/08/2026 09:15</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div id="toast-icon-container"></div>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Tích hợp Thymeleaf bằng th:src -->
+    <script type="module" src="/src/script.js" th:src="@{/js/script.js}"></script>
+    <script>
+        // Init icons specific to this page manually since we decoupled some JS
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,11 +1,11 @@
+// Global State
 let allBuildings = [];
 let currentSelectedRoomId = null;
-let roomToCancelId = null;
-let bookingHistory = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     setDefaultDate();
     
+    // Gọi API của Spring Boot để lấy danh sách Tòa nhà & Phòng học
     fetch('/api/buildings')
         .then(response => response.json())
         .then(data => {
@@ -16,12 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => console.error('Lỗi lấy dữ liệu từ API:', error));
 });
 
+// Khởi tạo Lucide Icons
 function initIcons() {
     if (window.lucide) {
         lucide.createIcons();
     }
 }
 
+// Set mặc định ngày hôm nay cho ô Input Date
 function setDefaultDate() {
     const dateInput = document.getElementById('date-select');
     if(dateInput) {
@@ -30,6 +32,7 @@ function setDefaultDate() {
     }
 }
 
+// Đổ dữ liệu Tòa nhà vào thẻ <select>
 function populateBuildingFilter(buildings) {
     const select = document.getElementById('building-select');
     select.innerHTML = '<option value="ALL">Chọn tất cả</option>';
@@ -44,7 +47,6 @@ function renderRooms(buildingsToRender) {
     const roomList = document.getElementById('room-list');
     roomList.innerHTML = '';
 
-    // Kiểm tra xem có tòa nhà nào hoặc phòng nào không
     const hasAnyRoom = buildingsToRender.some(b => b.rooms && b.rooms.length > 0);
     
     if (!hasAnyRoom) {
@@ -52,9 +54,8 @@ function renderRooms(buildingsToRender) {
         return;
     }
 
-    // Duyệt qua từng tòa nhà
     buildingsToRender.forEach(building => {
-        if (!building.rooms || building.rooms.length === 0) return; // Bỏ qua tòa nhà không có phòng
+        if (!building.rooms || building.rooms.length === 0) return;
 
         const section = document.createElement('div');
         section.className = 'building-section';
@@ -66,16 +67,16 @@ function renderRooms(buildingsToRender) {
         
         const grid = section.querySelector('.room-grid');
         
-        // Duyệt qua từng phòng trong tòa nhà
         building.rooms.forEach(room => {
-            const isBorrowed = room.trangThai !== '0'; // '0' là trống, khác '0' là đang mượn
+            const isBorrowed = room.trangThai !== '0';
             const card = document.createElement('div');
             card.className = 'room-card' + (isBorrowed ? ' borrowed-card' : '');
             
+            // Logic Nút bấm: Đang mượn thì làm mờ không cho bấm, Trống thì cho mượn
             let actionButton = '';
             if (isBorrowed) {
-                actionButton = `<button class="btn-danger btn-action" onclick="openCancelModal('${room.maPhong}', '${room.tenPhong}')">
-                    <i data-lucide="x-circle"></i> Hủy đăng ký
+                actionButton = `<button class="btn-secondary btn-action" disabled style="cursor: not-allowed; opacity: 0.7;">
+                    <i data-lucide="lock"></i> Đang mượn
                 </button>`;
             } else {
                 actionButton = `<button class="btn-primary btn-action" onclick="openModal('${room.maPhong}', '${room.tenPhong}')">
@@ -93,7 +94,6 @@ function renderRooms(buildingsToRender) {
                 <div class="card-body">
                     <div class="equipment-title">Túi đồ bao gồm:</div>
                     <ul class="equipment-list">
-                        <!-- Tạm thời fix cứng do chưa có bảng Thiết bị -->
                         <li class="equipment-item"><i data-lucide="check-square"></i> 1 Mic</li>
                         <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Máy chiếu</li>
                         <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Điều hòa</li>
@@ -113,7 +113,7 @@ function renderRooms(buildingsToRender) {
     initIcons();
 }
 
-// Filter Logic
+// Logic Lọc theo Tòa nhà
 function applyFilters() {
     const selectedBuildingCode = document.getElementById('building-select').value;
     
@@ -125,78 +125,7 @@ function applyFilters() {
     renderRooms(filtered);
 }
 
-// Navigation Logic
-function toggleView(view) {
-    const bookingView = document.getElementById('booking-view');
-    const historyView = document.getElementById('history-view');
-    const btnHome = document.getElementById('btn-home');
-    const btnHistory = document.getElementById('btn-history');
-
-    if (view === 'history') {
-        bookingView.classList.add('hidden');
-        historyView.classList.remove('hidden');
-        btnHistory.classList.add('active-nav');
-        btnHome.classList.remove('active-nav');
-        renderHistory();
-    } else {
-        bookingView.classList.remove('hidden');
-        historyView.classList.add('hidden');
-        btnHome.classList.add('active-nav');
-        btnHistory.classList.remove('active-nav');
-        applyFilters();
-    }
-}
-
-// Render History View
-function renderHistory() {
-    const container = document.getElementById('history-list');
-    container.innerHTML = '';
-    
-    if (bookingHistory.length === 0) {
-        container.innerHTML = '<div class="empty-state">Chưa có lịch sử mượn phòng nào.</div>';
-        return;
-    }
-    
-    const sortedHistory = [...bookingHistory].reverse();
-    
-    sortedHistory.forEach(record => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        
-        const statusBadge = record.status === 'active' 
-            ? `<span class="badge badge-active">Đang mượn</span>`
-            : `<span class="badge badge-canceled">Đã hủy</span>`;
-            
-        let actionBtn = '';
-        if (record.status === 'active') {
-            actionBtn = `<button class="btn-danger btn-sm" onclick="openCancelModal('${record.roomId}', '${record.roomName}')">
-                <i data-lucide="x-circle"></i> Hủy
-            </button>`;
-        }
-
-        item.innerHTML = `
-            <div class="history-info">
-                <div class="history-title">
-                    <h4>${record.roomName} - ${record.building}</h4>
-                    ${statusBadge}
-                </div>
-                <div class="history-details">
-                    <span><i data-lucide="calendar"></i> ${new Date(record.date).toLocaleDateString('vi-VN')}</span>
-                    <span><i data-lucide="clock"></i> ${record.shift}</span>
-                    <span><i data-lucide="info"></i> Đã đặt lúc: ${record.timestamp}</span>
-                </div>
-            </div>
-            <div class="history-action">
-                ${actionBtn}
-            </div>
-        `;
-        container.appendChild(item);
-    });
-    
-    initIcons();
-}
-
-// Modal Logic - Borrow
+// Modal Logic - Mở Form Xác nhận
 function openModal(roomId, roomName) {
     currentSelectedRoomId = roomId;
     document.getElementById('modal-room-name').textContent = roomName;
@@ -212,15 +141,15 @@ function openModal(roomId, roomName) {
     document.getElementById('borrow-modal').classList.add('active');
 }
 
+// Modal Logic - Đóng Form
 function closeModal() {
     currentSelectedRoomId = null;
     document.getElementById('borrow-modal').classList.remove('active');
 }
 
+// Gọi API POST để mượn phòng
 function confirmBorrow() {
     if (currentSelectedRoomId) {
-        
-        // Thu thập dữ liệu từ giao diện
         const selectedDate = document.getElementById('date-select').value;
         const shiftValue = document.getElementById('shift-select').value;
         
@@ -230,7 +159,6 @@ function confirmBorrow() {
             caMuon: parseInt(shiftValue)
         };
 
-        // Bắn API
         fetch('/api/bookings', {
             method: 'POST',
             headers: {
@@ -246,7 +174,7 @@ function confirmBorrow() {
             closeModal();
             showToast('Đăng ký mượn phòng thành công!', 'success');
             
-            // Lấy lại danh sách phòng mới nhất từ server để giao diện tự cập nhật thẻ màu đỏ
+            // Gọi lại API để load màu nền thẻ phòng (từ trắng sang đỏ)
             fetch('/api/buildings')
                 .then(res => res.json())
                 .then(newData => {
@@ -256,52 +184,13 @@ function confirmBorrow() {
         })
         .catch(error => {
             closeModal();
-            showToast('Lỗi: Không thể mượn phòng!', 'danger');
+            showToast('Vui lòng đăng nhập', 'danger');
             console.error(error);
         });
     }
 }
 
-// Modal Logic - Cancel
-function openCancelModal(roomId, roomName) {
-    roomToCancelId = roomId;
-    document.getElementById('cancel-modal-room-name').textContent = roomName;
-    document.getElementById('cancel-modal').classList.add('active');
-}
-
-function closeCancelModal() {
-    roomToCancelId = null;
-    document.getElementById('cancel-modal').classList.remove('active');
-}
-
-function confirmCancel() {
-    if (roomToCancelId) {
-        // Tạm thời update data ở FE, sau này gọi API thật
-        let foundRoom = null;
-        for (let b of allBuildings) {
-            let r = b.rooms.find(x => x.maPhong === roomToCancelId);
-            if (r) { foundRoom = r; break; }
-        }
-
-        if (foundRoom) {
-            foundRoom.trangThai = '0'; // Trả về trạng thái trống
-            
-            const booking = bookingHistory.find(b => b.roomId === roomToCancelId && b.status === 'active');
-            if (booking) {
-                booking.status = 'canceled';
-            }
-            
-            applyFilters();
-            if (!document.getElementById('history-view').classList.contains('hidden')) {
-                renderHistory();
-            }
-            closeCancelModal();
-            showToast('Đã hủy đăng ký thành công!', 'danger');
-        }
-    }
-}
-
-// Toast Logic
+// Toast Thông báo góc dưới màn hình
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const toastIconContainer = document.getElementById('toast-icon-container');
@@ -324,35 +213,24 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Event Listeners Setup
+// Cài đặt các sự kiện (Event Listeners)
 document.addEventListener('DOMContentLoaded', () => {
-    // Nav Events
-    document.getElementById('btn-home').addEventListener('click', () => toggleView('home'));
-    document.getElementById('btn-history').addEventListener('click', () => toggleView('history'));
-
-    // Borrow Modal Events
+    // Sự kiện Modal
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
     document.getElementById('btn-confirm-modal').addEventListener('click', confirmBorrow);
     
-    // Cancel Modal Events
-    document.getElementById('btn-close-cancel-modal').addEventListener('click', closeCancelModal);
-    document.getElementById('btn-cancel-cancel-modal').addEventListener('click', closeCancelModal);
-    document.getElementById('btn-confirm-cancel-modal').addEventListener('click', confirmCancel);
-    
-    // Đóng Modal khi click ra ngoài
+    // Đóng Modal khi click ra khoảng trống bên ngoài
     window.addEventListener('click', (e) => {
         if (e.target.id === 'borrow-modal') closeModal();
-        if (e.target.id === 'cancel-modal') closeCancelModal();
     });
 
-    // Nút Tìm kiếm lọc theo Tòa nhà
+    // Sự kiện Nút Tìm kiếm
     document.getElementById('btn-search').addEventListener('click', () => {
         applyFilters();
         showToast('Đã cập nhật danh sách phòng', 'success');
     });
 });
 
-// Expose functions globally cho các inline onclick handlers ở HTML
+// Expose hàm ra toàn cục để HTML gọi được (onclick)
 window.openModal = openModal;
-window.openCancelModal = openCancelModal;
