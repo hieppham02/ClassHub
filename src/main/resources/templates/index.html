@@ -60,12 +60,8 @@
                 <div class="filter-group">
                     <label for="building-select">Tòa nhà</label>
                     <select id="building-select" class="form-control">
-                        <option value="ALL">Tất cả các tòa</option>
-                        <option value="Tòa EAUT">Tòa EAUT</option>
-                        <option value="Tòa PLC">Tòa POLYCO</option>
-                        <option value="Tòa TT">Tòa Thuận Thành</option>
-                        <option value="Tòa DTD">Tòa Đinh Trọng Dật</option>
-                        <option value="Tòa VNB">Tòa Việt Nam Building</option>
+                        <option value="ALL">Chọn tất cả</option>
+                        <!-- Option sẽ được JS tự động đổ vào đây -->
                     </select>
                 </div>
                 <div class="filter-group">
@@ -89,8 +85,58 @@
 
             <!-- Room List Section -->
             <section class="room-list" id="room-list">
-                <!-- Cards will be injected here by JS grouped by building -->
+                
+                <th:block th:each="b : ${buildings}">
+                    
+                    <div class="building-section" th:if="${b != null and not #lists.isEmpty(b?.rooms)}">
+                        <h2 class="building-title">
+                            <i data-lucide="building"></i> <span th:text="${b.tenToaNha}"></span>
+                        </h2>
+
+                        <div class="room-grid">
+                            
+                            <div th:each="room : ${b?.rooms}" 
+                                th:classappend="${room.trangThai != '0'} ? 'borrowed-card' : ''" 
+                                class="room-card">
+                                
+                                <div class="card-header">
+                                    <div class="card-title" th:text="${room.tenPhong}"></div>
+                                    <div class="card-capacity">
+                                        <i data-lucide="users"></i> <span th:text="${room.sucChua}"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div class="equipment-title">Túi đồ bao gồm:</div>
+                                    <ul class="equipment-list">
+                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Mic</li>
+                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Máy chiếu</li>
+                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Điều hòa</li>
+                                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Chìa khóa</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="card-footer">
+                                    <button th:if="${room.trangThai == '0'}" 
+                                            class="btn-primary btn-action" 
+                                            th:attr="onclick=|openModal('${room.maPhong}', '${room.tenPhong}')|">
+                                        Đăng ký mượn
+                                    </button>
+                                    
+                                    <button th:unless="${room.trangThai == '0'}" 
+                                            class="btn-danger btn-action" 
+                                            th:attr="onclick=|openCancelModal('${room.maPhong}', '${room.tenPhong}')|">
+                                        <i data-lucide="x-circle"></i> Hủy đăng ký
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </th:block>
+
             </section>
+            
         </div>
 
         <!-- History View -->

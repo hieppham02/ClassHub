@@ -1,33 +1,27 @@
-// Mock Data for Rooms across 4 Buildings
-const mockRooms = [
-    { id: "A501", name: "Phòng 501", building: "Tòa A", capacity: 40, equipment: ["1 Mic", "1 ĐK Máy chiếu", "1 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "A502", name: "Phòng 502", building: "Tòa A", capacity: 60, equipment: ["2 Mic", "1 ĐK Máy chiếu", "2 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "B201", name: "Phòng 201", building: "Tòa B", capacity: 35, equipment: ["1 Mic", "1 ĐK Máy chiếu", "1 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "B202", name: "Phòng 202", building: "Tòa B", capacity: 80, equipment: ["2 Mic", "1 ĐK Máy chiếu", "4 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "C301", name: "Phòng 301", building: "Tòa C", capacity: 50, equipment: ["1 Mic", "1 ĐK Máy chiếu", "2 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "C302", name: "Phòng 302", building: "Tòa C", capacity: 40, equipment: ["1 Mic", "1 ĐK Máy chiếu", "2 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "D401", name: "Phòng 401", building: "Tòa D", capacity: 100, equipment: ["4 Mic", "2 ĐK Máy chiếu", "4 ĐK Điều hòa", "1 Chìa khóa"], status: "available" },
-    { id: "D402", name: "Phòng 402", building: "Tòa D", capacity: 30, equipment: ["1 Mic", "1 ĐK Máy chiếu", "1 ĐK Điều hòa", "1 Chìa khóa"], status: "available" }
-];
-
-// Global State
+let allBuildings = [];
 let currentSelectedRoomId = null;
 let roomToCancelId = null;
 let bookingHistory = [];
 
-// [TÍCH HỢP SPRING BOOT]
-// TODO: Thay thế mockRooms bằng API Call tới Backend Spring Boot.
-// Ví dụ:
-// fetch('/api/rooms').then(res => res.json()).then(data => renderRooms(data))
+document.addEventListener('DOMContentLoaded', () => {
+    setDefaultDate();
+    
+    fetch('/api/buildings')
+        .then(response => response.json())
+        .then(data => {
+            allBuildings = data;
+            populateBuildingFilter(allBuildings);
+            renderRooms(allBuildings);
+        })
+        .catch(error => console.error('Lỗi lấy dữ liệu từ API:', error));
+});
 
-// Initialize Lucide Icons
 function initIcons() {
     if (window.lucide) {
         lucide.createIcons();
     }
 }
 
-// Set default date to today
 function setDefaultDate() {
     const dateInput = document.getElementById('date-select');
     if(dateInput) {
@@ -36,68 +30,74 @@ function setDefaultDate() {
     }
 }
 
-// Render Rooms Grouped by Building
-function renderRooms(rooms) {
+function populateBuildingFilter(buildings) {
+    const select = document.getElementById('building-select');
+    select.innerHTML = '<option value="ALL">Chọn tất cả</option>';
+    
+    buildings.forEach(b => {
+        select.innerHTML += `<option value="${b.maToaNha}">${b.tenToaNha}</option>`;
+    });
+}
+
+// Render dữ liệu ra màn hình
+function renderRooms(buildingsToRender) {
     const roomList = document.getElementById('room-list');
     roomList.innerHTML = '';
 
-    if (rooms.length === 0) {
+    // Kiểm tra xem có tòa nhà nào hoặc phòng nào không
+    const hasAnyRoom = buildingsToRender.some(b => b.rooms && b.rooms.length > 0);
+    
+    if (!hasAnyRoom) {
         roomList.innerHTML = '<p class="no-data empty-state">Không tìm thấy phòng phù hợp.</p>';
         return;
     }
 
-    // Group rooms by building
-    const grouped = {};
-    rooms.forEach(room => {
-        if (!grouped[room.building]) {
-            grouped[room.building] = [];
-        }
-        grouped[room.building].push(room);
-    });
+    // Duyệt qua từng tòa nhà
+    buildingsToRender.forEach(building => {
+        if (!building.rooms || building.rooms.length === 0) return; // Bỏ qua tòa nhà không có phòng
 
-    // Render each building section
-    Object.keys(grouped).sort().forEach(buildingName => {
         const section = document.createElement('div');
         section.className = 'building-section';
         
         section.innerHTML = `
-            <h2 class="building-title"><i data-lucide="building"></i> ${buildingName}</h2>
+            <h2 class="building-title"><i data-lucide="building"></i> ${building.tenToaNha}</h2>
             <div class="room-grid"></div>
         `;
         
         const grid = section.querySelector('.room-grid');
         
-        grouped[buildingName].forEach(room => {
-            const isBorrowed = room.status === 'borrowed';
+        // Duyệt qua từng phòng trong tòa nhà
+        building.rooms.forEach(room => {
+            const isBorrowed = room.trangThai !== '0'; // '0' là trống, khác '0' là đang mượn
             const card = document.createElement('div');
             card.className = 'room-card' + (isBorrowed ? ' borrowed-card' : '');
             
             let actionButton = '';
             if (isBorrowed) {
-                actionButton = `<button class="btn-danger btn-action" onclick="openCancelModal('${room.id}', '${room.name}')">
+                actionButton = `<button class="btn-danger btn-action" onclick="openCancelModal('${room.maPhong}', '${room.tenPhong}')">
                     <i data-lucide="x-circle"></i> Hủy đăng ký
                 </button>`;
             } else {
-                actionButton = `<button class="btn-primary btn-action" onclick="openModal('${room.id}', '${room.name}')">
+                actionButton = `<button class="btn-primary btn-action" onclick="openModal('${room.maPhong}', '${room.tenPhong}')">
                     Đăng ký mượn
                 </button>`;
             }
 
             card.innerHTML = `
                 <div class="card-header">
-                    <div class="card-title">${room.name}</div>
+                    <div class="card-title">${room.tenPhong}</div>
                     <div class="card-capacity">
-                        <i data-lucide="users"></i> ${room.capacity}
+                        <i data-lucide="users"></i> ${room.sucChua}
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="equipment-title">Túi đồ bao gồm:</div>
                     <ul class="equipment-list">
-                        ${room.equipment.map(item => `
-                            <li class="equipment-item">
-                                <i data-lucide="check-square"></i> ${item}
-                            </li>
-                        `).join('')}
+                        <!-- Tạm thời fix cứng do chưa có bảng Thiết bị -->
+                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Mic</li>
+                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Máy chiếu</li>
+                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Điều hòa</li>
+                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Chìa khóa</li>
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -115,11 +115,11 @@ function renderRooms(rooms) {
 
 // Filter Logic
 function applyFilters() {
-    const building = document.getElementById('building-select').value;
+    const selectedBuildingCode = document.getElementById('building-select').value;
     
-    let filtered = mockRooms;
-    if (building !== 'ALL') {
-        filtered = mockRooms.filter(r => r.building === building);
+    let filtered = allBuildings;
+    if (selectedBuildingCode !== 'ALL') {
+        filtered = allBuildings.filter(b => b.maToaNha === selectedBuildingCode);
     }
     
     renderRooms(filtered);
@@ -157,7 +157,6 @@ function renderHistory() {
         return;
     }
     
-    // Sort by timestamp descending
     const sortedHistory = [...bookingHistory].reverse();
     
     sortedHistory.forEach(record => {
@@ -197,7 +196,6 @@ function renderHistory() {
     initIcons();
 }
 
-
 // Modal Logic - Borrow
 function openModal(roomId, roomName) {
     currentSelectedRoomId = roomId;
@@ -221,33 +219,46 @@ function closeModal() {
 
 function confirmBorrow() {
     if (currentSelectedRoomId) {
-        // [TÍCH HỢP SPRING BOOT]
-        // TODO: Gọi API POST tới backend để lưu thông tin mượn phòng.
-        // fetch('/api/bookings', { method: 'POST', body: JSON.stringify({...}) })
-        //   .then(() => { ... })
         
-        const room = mockRooms.find(r => r.id === currentSelectedRoomId);
-        room.status = 'borrowed';
-        
+        // Thu thập dữ liệu từ giao diện
         const selectedDate = document.getElementById('date-select').value;
-        const shiftSelect = document.getElementById('shift-select');
-        const selectedShiftText = shiftSelect.options[shiftSelect.selectedIndex].text;
+        const shiftValue = document.getElementById('shift-select').value;
         
-        // Add to history
-        bookingHistory.push({
-            id: Date.now().toString(),
-            roomId: room.id,
-            roomName: room.name,
-            building: room.building,
-            date: selectedDate,
-            shift: selectedShiftText,
-            timestamp: new Date().toLocaleString('vi-VN'),
-            status: 'active'
+        const requestData = {
+            maPhong: currentSelectedRoomId,
+            ngayMuon: selectedDate,
+            caMuon: parseInt(shiftValue)
+        };
+
+        // Bắn API
+        fetch('/api/bookings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Có lỗi xảy ra hoặc chưa đăng nhập');
+            return response.json();
+        })
+        .then(data => {
+            closeModal();
+            showToast('Đăng ký mượn phòng thành công!', 'success');
+            
+            // Lấy lại danh sách phòng mới nhất từ server để giao diện tự cập nhật thẻ màu đỏ
+            fetch('/api/buildings')
+                .then(res => res.json())
+                .then(newData => {
+                    allBuildings = newData;
+                    applyFilters();
+                });
+        })
+        .catch(error => {
+            closeModal();
+            showToast('Lỗi: Không thể mượn phòng!', 'danger');
+            console.error(error);
         });
-        
-        applyFilters(); 
-        closeModal();
-        showToast('Đăng ký mượn phòng thành công!', 'success');
     }
 }
 
@@ -265,25 +276,28 @@ function closeCancelModal() {
 
 function confirmCancel() {
     if (roomToCancelId) {
-        // [TÍCH HỢP SPRING BOOT]
-        // TODO: Gọi API DELETE/PUT tới backend để hủy lịch mượn.
-        // fetch(`/api/bookings/${roomToCancelId}`, { method: 'DELETE' }).then(...)
-        
-        const room = mockRooms.find(r => r.id === roomToCancelId);
-        room.status = 'available';
-        
-        // Update history
-        const booking = bookingHistory.find(b => b.roomId === roomToCancelId && b.status === 'active');
-        if (booking) {
-            booking.status = 'canceled';
+        // Tạm thời update data ở FE, sau này gọi API thật
+        let foundRoom = null;
+        for (let b of allBuildings) {
+            let r = b.rooms.find(x => x.maPhong === roomToCancelId);
+            if (r) { foundRoom = r; break; }
         }
-        
-        applyFilters();
-        if(!document.getElementById('history-view').classList.contains('hidden')){
-            renderHistory();
+
+        if (foundRoom) {
+            foundRoom.trangThai = '0'; // Trả về trạng thái trống
+            
+            const booking = bookingHistory.find(b => b.roomId === roomToCancelId && b.status === 'active');
+            if (booking) {
+                booking.status = 'canceled';
+            }
+            
+            applyFilters();
+            if (!document.getElementById('history-view').classList.contains('hidden')) {
+                renderHistory();
+            }
+            closeCancelModal();
+            showToast('Đã hủy đăng ký thành công!', 'danger');
         }
-        closeCancelModal();
-        showToast('Đã hủy đăng ký thành công!', 'danger');
     }
 }
 
@@ -302,7 +316,7 @@ function showToast(message, type = 'success') {
         toastIconContainer.innerHTML = '<i data-lucide="check-circle"></i>';
     }
     
-    initIcons(); // Re-render the icon
+    initIcons(); 
 
     toast.classList.add('show');
     setTimeout(() => {
@@ -310,12 +324,8 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-
 // Event Listeners Setup
 document.addEventListener('DOMContentLoaded', () => {
-    setDefaultDate();
-    applyFilters();
-
     // Nav Events
     document.getElementById('btn-home').addEventListener('click', () => toggleView('home'));
     document.getElementById('btn-history').addEventListener('click', () => toggleView('history'));
@@ -330,19 +340,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-cancel-cancel-modal').addEventListener('click', closeCancelModal);
     document.getElementById('btn-confirm-cancel-modal').addEventListener('click', confirmCancel);
     
-    // Close modals when clicking outside
+    // Đóng Modal khi click ra ngoài
     window.addEventListener('click', (e) => {
         if (e.target.id === 'borrow-modal') closeModal();
         if (e.target.id === 'cancel-modal') closeCancelModal();
     });
 
-    // Search / Filter button
+    // Nút Tìm kiếm lọc theo Tòa nhà
     document.getElementById('btn-search').addEventListener('click', () => {
         applyFilters();
         showToast('Đã cập nhật danh sách phòng', 'success');
     });
 });
 
-// Expose functions globally for inline onclick handlers
+// Expose functions globally cho các inline onclick handlers ở HTML
 window.openModal = openModal;
 window.openCancelModal = openCancelModal;
