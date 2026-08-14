@@ -3,6 +3,7 @@ package vn.edu.eaut.ems.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
+import java.util.Set;
 
 @Entity
 @Table(name = "phong_hoc")
@@ -21,6 +22,9 @@ public class Room {
     @Column(name = "trang_thai")
     private String trangThai;
 
+    @OneToMany(mappedBy = "room", fetch = FetchType.EAGER)
+    private Set<Equipment> equipments;
+
     @ManyToOne // N-1
     @JoinColumn(name = "ma_toa_nha") 
     @JsonIgnore
@@ -36,7 +40,6 @@ public class Room {
         this.building = building;
     }
 
-    // Getters & Setters
     public String getMaPhong() { return maPhong; }
     public void setMaPhong(String maPhong) { this.maPhong = maPhong; }
 
@@ -51,4 +54,7 @@ public class Room {
 
     public Building getBuilding() { return building; }
     public void setBuilding(Building building) { this.building = building; }
+
+    public Set<Equipment> getEquipments() { return equipments; }
+    public void setEquipments(Set<Equipment> equipments) { this.equipments = equipments; }
 }

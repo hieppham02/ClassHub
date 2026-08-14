@@ -1,17 +1,8 @@
+// Global State
 let allBuildings = [];
 let currentSelectedRoomId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetch('/api/buildings')
-        .then(response => response.json())
-        .then(data => {
-            allBuildings = data;
-            populateBuildingFilter(allBuildings);
-            renderRooms(allBuildings);
-        })
-        .catch(error => console.error('Lỗi lấy dữ liệu từ API:', error));
-});
-
+// Khởi tạo Lucide Icons
 function initIcons() {
     if (window.lucide) {
         lucide.createIcons();
@@ -67,6 +58,17 @@ function renderRooms(buildingsToRender) {
                 </button>`;
             }
 
+            let equipmentHtml = '';        
+            if (room.equipments && room.equipments.length > 0) {
+                equipmentHtml = room.equipments.map(e => `
+                    <li class="equipment-item">
+                        <i data-lucide="check-square"></i> ${e.soLuong} ${e.tenThietBi}
+                    </li>
+                `).join('');
+            } else {
+                equipmentHtml = '<li class="equipment-item" style="color: var(--danger);">Phòng trống (Không có đồ)</li>';
+            }
+
             card.innerHTML = `
                 <div class="card-header">
                     <div class="card-title">${room.tenPhong}</div>
@@ -76,11 +78,8 @@ function renderRooms(buildingsToRender) {
                 </div>
                 <div class="card-body">
                     <div class="equipment-title">Túi đồ bao gồm:</div>
-                    <ul class="equipment-list">
-                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Mic</li>
-                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Máy chiếu</li>
-                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 ĐK Điều hòa</li>
-                        <li class="equipment-item"><i data-lucide="check-square"></i> 1 Chìa khóa</li>
+                    <ul class="equipment-list">      
+                        ${equipmentHtml}          
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -96,6 +95,7 @@ function renderRooms(buildingsToRender) {
     initIcons();
 }
 
+// Logic Lọc theo Tòa nhà
 function applyFilters() {
     const selectedBuildingCode = document.getElementById('building-select').value;
     
@@ -107,6 +107,7 @@ function applyFilters() {
     renderRooms(filtered);
 }
 
+// Modal Logic - Mở Form
 function openModal(roomId, roomName) {
     currentSelectedRoomId = roomId;
     document.getElementById('modal-room-name').textContent = roomName;
@@ -123,7 +124,7 @@ function openModal(roomId, roomName) {
     document.getElementById('borrow-modal').classList.add('active');
 }
 
-
+// Modal Logic - Đóng Form
 function closeModal() {
     currentSelectedRoomId = null;
     document.getElementById('borrow-modal').classList.remove('active');
@@ -174,7 +175,6 @@ function confirmBorrow() {
     }
 }
 
-// Toast Thông báo
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const toastIconContainer = document.getElementById('toast-icon-container');
@@ -190,18 +190,14 @@ function showToast(message, type = 'success') {
     }
     
     initIcons(); 
-
     toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
     document.getElementById('btn-confirm-modal').addEventListener('click', confirmBorrow);
-    
     window.addEventListener('click', (e) => {
         if (e.target.id === 'borrow-modal') closeModal();
     });
@@ -210,6 +206,15 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilters();
         showToast('Đã cập nhật danh sách phòng', 'success');
     });
+
+    fetch('/api/buildings')
+        .then(response => response.json())
+        .then(data => {
+            allBuildings = data;
+            populateBuildingFilter(allBuildings);
+            renderRooms(allBuildings);
+        })
+        .catch(error => console.error('Lỗi lấy dữ liệu từ API:', error));
 });
 
 window.openModal = openModal;
