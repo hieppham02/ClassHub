@@ -1,0 +1,14 @@
+Chuẩn luôn ông! Khung sườn thì vẫn y hệt vậy (vẫn phải bọc trong một arrow function () => { ... }), nhưng ông sẽ cần thêm một bước gắp cái dữ liệu text đó ra trước khi ném vào hàm.
+<p>Nhiệt độ điều hòa: <span id="muc-nhiet">30</span> độ</p>
+<button id="btn-gui-nhiet">Gửi xuống ESP32</button>
+document.getElementById("btn-gui-nhiet").addEventListener("click", () => {
+    // Bước 1: Đọc text từ HTML ra (sẽ lấy được chữ "30")
+    let giaTri = document.getElementById("muc-nhiet").innerText;
+    
+    // Bước 2: Gọi hàm và truyền biến đó vào
+    sendLedCommand(giaTri); 
+});
+
+Với thẻ input
+let giaTriNhap = document.getElementById("o-nhap-lieu").value;
+sendLedCommand(giaTriNhap);

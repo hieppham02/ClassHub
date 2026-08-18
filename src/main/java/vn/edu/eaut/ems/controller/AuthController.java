@@ -57,7 +57,6 @@ public class AuthController {
         Optional<Account> accountOpt = accountRepository.findById(username);
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
-
             if (account.getMatKhau().equals(password)) {
                 session.setAttribute("loggedInUser", account);
                 if (rememberMe != null) {

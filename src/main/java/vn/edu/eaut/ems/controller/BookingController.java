@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.eaut.ems.entity.*;
 import vn.edu.eaut.ems.repository.*;
+import vn.edu.eaut.ems.service.MqttService;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -15,10 +16,12 @@ public class BookingController {
 
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
+    private final MqttService mqttService;
 
-    public BookingController(RoomRepository roomRepository, BookingRepository bookingRepository) {
+    public BookingController(RoomRepository roomRepository, BookingRepository bookingRepository, MqttService mqttService) {
         this.roomRepository = roomRepository;
         this.bookingRepository = bookingRepository;
+        this.mqttService = mqttService;
     }
 
     @PostMapping("/bookings")
@@ -102,6 +105,9 @@ public class BookingController {
         booking.setOtp(newOtp);
         bookingRepository.save(booking);
         System.out.println("Mã OTP: " + newOtp);
+
+        String command = "{\"otp\": " + newOtp + "}";
+        mqttService.sendCommandToESP32("otp", command);
 
         return ResponseEntity.ok(Map.of("newOtp", newOtp));
     }

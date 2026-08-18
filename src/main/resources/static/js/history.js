@@ -178,4 +178,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function sendLedCommand(state) {
+  let url = "/api/led/" + state;
+
+  fetch(url, {
+    method: "POST",
+  })
+    .then((response) => response.text())
+    .then((data) => {
+      console.log("Server:", data);
+    })
+    .catch((error) => {
+      console.error("Lỗi:", error);
+    });
+}
+
+function sendOTP(){
+    let url = "/api/otp";
+
+  fetch(url, {
+    method: "POST",
+  })
+    .then((response) => response.text())
+    .then((data) => {
+      console.log("Server:", data);
+    })
+    .catch((error) => {
+      console.error("Lỗi:", error);
+    });
+}
+
+document
+  .querySelector(".btn-On")
+  .addEventListener("click", () => sendLedCommand(1));
+document
+  .querySelector(".btn-Off")
+  .addEventListener("click", () => sendLedCommand(0));
+  document
+  .querySelector(".btn-otp")
+  .addEventListener("click", () => sendOTP());
+
 window.openReturnModal = openReturnModal;
