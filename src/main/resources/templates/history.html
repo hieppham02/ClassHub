@@ -16,17 +16,24 @@
     <header class="header">
         <div class="header-container">
             <div class="logo">
-                <i data-lucide="school"></i>
-                <h1>ClasHub</h1>
+                <a th:href="@{/}" style="color: white; text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">                
+                    <h1>ClassHub</h1>
+                </a>
             </div>
             <div class="user-info">
                 <nav class="header-nav">
-                    <a href="/index.html" th:href="@{/}" class="btn-nav" style="text-decoration: none;"><i data-lucide="home"></i> Trang chủ</a>
-                    <a href="/history.html" th:href="@{/lich-su}" class="btn-nav active-nav" style="text-decoration: none;"><i data-lucide="clock"></i> Lịch sử mượn</a>
+                    <a href="/index.html" th:href="@{/}" class="btn-nav" style="text-decoration: none;">
+                        <i data-lucide="home"></i> <span>Trang chủ</span>
+                    </a>
+                    <a href="/history.html" th:href="@{/lich-su}" class="btn-nav active-nav" style="text-decoration: none;">
+                        <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
+                    </a>
                 </nav>
                 <div class="divider"></div>
                 <span class="user-greeting">Xin chào, <strong th:text="${session.loggedInUser.hoTen}">Sinh viên</strong></span>
-                <a href="/login.html" th:href="@{/logout}" class="btn-logout" style="text-decoration: none;"><i data-lucide="log-out"></i> Đăng xuất</a>
+                <a href="/login.html" th:href="@{/logout}" class="btn-logout" style="text-decoration: none;">
+                    <i data-lucide="log-out"></i> <span class="hide-text-mobile">Đăng xuất</span>
+                </a>
             </div>
         </div>
     </header>
@@ -36,9 +43,9 @@
         <div id="history-view">
             <div class="history-header">
                 <h2>Lịch sử mượn phòng & thiết bị</h2>
-                <button class="btn-On" style="padding: 10px; background: green; color: white;">BẬT ĐÈN</button>
-                <button class="btn-Off" style="padding: 10px; background: red; color: white;">TẮT ĐÈN</button>
-                <button class="btn-otp" style="padding: 10px; background: red; color: white;">SEND OTP</button>
+                <!-- <button class="btn-On" style="padding: 10px; background: green; color: white; border: none; border-radius: 4px; cursor: pointer;">BẬT ĐÈN</button>
+                <button class="btn-Off" style="padding: 10px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer;">TẮT ĐÈN</button>
+                <button class="btn-otp" style="padding: 10px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer;">SEND OTP</button> -->
             </div>
             <!-- Danh sách lịch sử -->            
                 <div id="history-list">
@@ -53,6 +60,7 @@
         <span id="toast-message"></span>
     </div>
 
+    <!-- Modal Trả thiết bị -->
     <div class="modal-backdrop" id="return-modal">
         <div class="modal-content">
             <div class="modal-header">

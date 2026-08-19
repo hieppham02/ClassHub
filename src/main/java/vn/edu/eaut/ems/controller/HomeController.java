@@ -14,6 +14,7 @@ import vn.edu.eaut.ems.entity.Account;
 import vn.edu.eaut.ems.entity.Booking;
 import vn.edu.eaut.ems.entity.Building;
 import vn.edu.eaut.ems.repository.BuildingRepository;
+import vn.edu.eaut.ems.service.MqttService;
 import vn.edu.eaut.ems.repository.BookingRepository;
 
 @Controller // Lưu ý: Dùng @Controller, KHÔNG dùng @RestController
@@ -21,10 +22,12 @@ public class HomeController {
 
     private final BuildingRepository buildingRepository;
     private final BookingRepository bookingRepository;
+    private final MqttService mqttService;
 
-    public HomeController(BuildingRepository buildingRepository, BookingRepository bookingRepository) {
+    public HomeController(BuildingRepository buildingRepository, BookingRepository bookingRepository, MqttService mqttService) {
         this.buildingRepository = buildingRepository;
         this.bookingRepository = bookingRepository;
+        this.mqttService = mqttService;
     }
 
     @GetMapping("/")
@@ -47,7 +50,7 @@ public class HomeController {
     }
 
     @GetMapping("/api/lich-su")
-    @ResponseBody // BẮT BUỘC có dòng này để báo cho Java biết đây là API nhả JSON
+    @ResponseBody
     public ResponseEntity<?> getMyHistoryApi(HttpSession session) {
         Account currentUser = (Account) session.getAttribute("loggedInUser");
         if (currentUser == null) {

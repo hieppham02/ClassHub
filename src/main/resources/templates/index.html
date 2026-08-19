@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang chủ - ClassHub</title>
-    <!-- Tích hợp Thymeleaf bằng th:href -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <!-- Google Fonts for modern look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -17,16 +14,17 @@
         <div class="header-container">
             <div class="logo">
                 <a th:href="@{/}">
-                    <img th:src="@{/assets/logo-text.png}" th:alt="logo" width="164" height="32">
+                    <img th:src="@{/assets/logo-text.png}" width="164" height="32">
                 </a>
             </div>
             <div class="user-info">
                 <nav class="header-nav">
-                    <a th:href="@{/}" style="text-decoration: none;">
-                        <button type="button" class="btn-nav active-nav"><i data-lucide="home"></i> Trang chủ</button>
+                    <!-- Flexbox Bottom Nav -->
+                    <a th:href="@{/}" class="btn-nav active-nav" style="text-decoration: none;">
+                        <i data-lucide="home"></i> <span>Trang chủ</span>
                     </a>
-                    <a th:href="@{/lich-su}" style="text-decoration: none;">
-                        <button type="button" class="btn-nav"><i data-lucide="clock"></i> Lịch sử mượn</button>
+                    <a th:href="@{/lich-su}" class="btn-nav" style="text-decoration: none;">
+                        <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
                     </a>
                 </nav>
                 <div class="divider"></div>
@@ -36,13 +34,13 @@
                 
                 <form th:if="${session.loggedInUser == null}" th:action="@{/login}" method="GET" style="display: inline;">
                     <button type="submit" class="btn-logout">
-                        <i data-lucide="log-in"></i> Đăng nhập
+                        <i data-lucide="log-in"></i> <span class="hide-text-mobile">Đăng nhập</span>
                     </button>
                 </form>
                 
                 <form th:if="${session.loggedInUser != null}" th:action="@{/logout}" method="GET" style="display: inline;">
                     <button type="submit" class="btn-logout">
-                        <i data-lucide="log-out"></i> Đăng xuất
+                        <i data-lucide="log-out"></i> <span class="hide-text-mobile">Đăng xuất</span>
                     </button>
                 </form>
             </div>

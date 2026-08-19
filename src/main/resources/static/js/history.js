@@ -58,10 +58,17 @@ function renderHistory(histories) {
             </button>`;
 
             otpSection = `
-                <div style="margin-top: 10px; background: #E6FFFA; padding: 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #B2F5EA;">
-                    <span style="color: #234E52; font-weight: 600;">Mã mở cửa:</span>
-                    <strong style="font-size: 1.2rem; letter-spacing: 2px; color: #319795;" id="otp-text-${record.id}">${record.otp}</strong>
-                    <button onclick="refreshOtp(${record.id})" style="background: none; border: none; cursor: pointer; color: #319795; padding: 2px;" title="Tạo mã mới">
+                <div class="otp-container">
+                    <input type="text" 
+                           class="otp-input"
+                           id="otp-input-${record.id}" 
+                           placeholder="Nhập mã" 
+                           maxlength="6"
+                           autocomplete="off">
+                    <button class="btn-primary otp-verify-btn" onclick="verifyOtp(${record.id})">
+                        <i data-lucide="key"></i> Mở cửa
+                    </button>
+                    <button class="otp-refresh-btn" onclick="refreshOtp(${record.id})" title="Cấp lại mã mới">
                         <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
                     </button>
                 </div>
@@ -81,7 +88,7 @@ function renderHistory(histories) {
                 <div class="history-details">
                     <span><i data-lucide="calendar"></i> ${borrowDate}</span>
                     <span><i data-lucide="clock"></i> ${shiftText}</span>
-                    <span><i data-lucide="info"></i> Đã đặt lúc: ${createdTime}</span>
+                    <span><i data-lucide="info"></i> Đã mượn lúc: ${createdTime}</span>
                     ${otpSection}
                 </div>
             </div>
@@ -154,8 +161,11 @@ window.refreshOtp = function(id) {
         return response.json();
     })
     .then(data => {
-        document.getElementById(`otp-text-${id}`).textContent = data.newOtp;
-        showToast('Đã tạo mã OTP mới!', 'success');
+        const inputElement = document.getElementById(`otp-input-${id}`);
+        if (inputElement) {
+            inputElement.value = ''; 
+        }
+        showToast('Đã cấp lại mã OTP mới tới tủ đồ!', 'success');
     })
     .catch(error => {
         showToast('Lỗi: Không thể lấy mã mới!', 'danger');
@@ -207,6 +217,33 @@ function sendOTP(){
       console.error("Lỗi:", error);
     });
 }
+
+window.verifyOtp = function(id) {
+    const inputElement = document.getElementById(`otp-input-${id}`);
+    const otpValue = inputElement ? inputElement.value.trim() : '';
+
+    if (!otpValue || otpValue.length !== 6) {
+        showToast('Vui lòng nhập đủ 6 chữ số OTP!', 'danger');
+        return;
+    }
+
+    fetch(`/api/bookings/${id}/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: otpValue })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Mã OTP không chính xác');
+        return response.json();
+    })
+    .then(data => {
+        showToast('Mở cửa thành công!', 'success');
+        inputElement.value = '';
+    })
+    .catch(error => {
+        showToast(error.message || 'Mã không đúng, vui lòng thử lại!', 'danger');
+    });
+};
 
 document
   .querySelector(".btn-On")
