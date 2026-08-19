@@ -63,7 +63,7 @@ public class BookingController {
         bookingRepository.save(booking);
         // otp
         System.out.println("Mã OTP: " + randomOtp);
-        String command = "{\"otp\": " + randomOtp + "}";
+        String command = "{\"otp\": \"" + randomOtp + "\"}";
         mqttService.sendCommandToESP32("otp", command);
 
         currentOtp = Integer.parseInt(randomOtp);
@@ -115,7 +115,7 @@ public class BookingController {
         System.out.println("Mã OTP: " + newOtp);
         currentOtp = Integer.parseInt(newOtp);
 
-        String command = "{\"otp\": " + newOtp + "}";
+        String command = "{\"otp\": \"" + newOtp + "\"}";
         mqttService.sendCommandToESP32("otp", command);
 
         return ResponseEntity.ok(Map.of("newOtp", newOtp));
@@ -134,10 +134,9 @@ public class BookingController {
 
         String inputOtp = request.get("otp");
         if (String.valueOf(currentOtp).equals(inputOtp) && booking.getOtp().equals(inputOtp)) {
-            String value  = "open";
-            String command = "{\"action\": " + value + "}";
+            String command = "{\"action\": \"open\"}";
             mqttService.sendCommandToESP32("action", command);
-            System.out.println(command);
+            //System.out.println(command);
             return ResponseEntity.ok(Map.of("message", "Mã chính xác"));
         }
 

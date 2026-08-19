@@ -47,15 +47,19 @@ function renderHistory(histories) {
         item.className = 'history-item';  
         
         const statusBadge = record.trangThai === 'ACTIVE' 
-            ? `<span class="badge badge-active">Đang mượn</span>`
+            ? `<span class="badge badge-active">Đang mượn</span>
+                <span class="badge badge-canceled">Tủ đóng</span>
+                `
             : `<span class="badge badge-canceled" style="background: #E2E8F0; color: #4A5568;">Đã trả</span>`;
             
         let actionBtn = '';
         let otpSection = '';
         if (record.trangThai === 'ACTIVE') {
-            actionBtn = `<button class="btn-primary btn-sm" onclick="openReturnModal(${record.id})">
-                <i data-lucide="check-circle"></i> Trả thiết bị
-            </button>`;
+            actionBtn = `
+                <button class="btn-primary btn-sm" onclick="openReturnModal(${record.id})">
+                    <i data-lucide="check-circle"></i> Trả thiết bị
+                </button>
+            `;
 
             otpSection = `
                 <div class="otp-container">
@@ -245,6 +249,8 @@ window.verifyOtp = function(id) {
     });
 };
 
+window.openReturnModal = openReturnModal;
+
 document
   .querySelector(".btn-On")
   .addEventListener("click", () => sendLedCommand(1));
@@ -254,5 +260,3 @@ document
   document
   .querySelector(".btn-otp")
   .addEventListener("click", () => sendOTP());
-
-window.openReturnModal = openReturnModal;

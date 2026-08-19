@@ -116,16 +116,21 @@ function applyFilters() {
 }
 
 function openModal(roomId, roomName) {
+  const shiftSelect = document.getElementById("shift-select");
+  const shiftValue = shiftSelect.value;
+
+  if (!shiftValue) {
+    showToast("Vui lòng chọn ca học trước khi đăng ký mượn!", "danger");
+    return;
+  }
+
   currentSelectedRoomId = roomId;
   document.getElementById("modal-room-name").textContent = roomName;
 
   const now = new Date();
-
-  const shiftSelect = document.getElementById("shift-select");
   const selectedShiftText = shiftSelect.options[shiftSelect.selectedIndex].text;
 
-  document.getElementById("modal-date").textContent =
-    now.toLocaleDateString("vi-VN");
+  document.getElementById("modal-date").textContent = now.toLocaleDateString("vi-VN");
   document.getElementById("modal-shift").textContent = selectedShiftText;
 
   document.getElementById("borrow-modal").classList.add("active");
