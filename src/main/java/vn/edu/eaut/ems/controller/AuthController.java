@@ -54,23 +54,24 @@ public class AuthController {
             RedirectAttributes redirectAttributes) {
         System.out.println("Username: " + username);
         System.out.println("Password: " + password);
-        Optional<Account> accountOpt = accountRepository.findById(username);
-        if (accountOpt.isPresent()) {
-            Account account = accountOpt.get();
-            if (account.getMatKhau().equals(password)) {
-                session.setAttribute("loggedInUser", account);
-                if (rememberMe != null) {
-                    Cookie cookie = new Cookie("rememberUser", username);
-                    cookie.setMaxAge(7 * 24 * 60 * 60);
-                    cookie.setPath("/");
-                    response.addCookie(cookie);
-                }
+        // Optional<Account> accountOpt = accountRepository.findById(username);
+        // if (accountOpt.isPresent()) {
+        //     Account account = accountOpt.get();
+        //     if (account.getMatKhau().equals(password)) {
+        //         session.setAttribute("loggedInUser", account);
+        //         if (rememberMe != null) {
+        //             Cookie cookie = new Cookie("rememberUser", username);
+        //             cookie.setMaxAge(7 * 24 * 60 * 60);
+        //             cookie.setPath("/");
+        //             response.addCookie(cookie);
+        //         }
 
-                return "redirect:/";
-            }
-        }
+        //         return "redirect:/";
+        //     }
+        // }
 
-        redirectAttributes.addFlashAttribute("errorMessage", "Mã đăng nhập hoặc mật khẩu không đúng.");
+        // redirectAttributes.addFlashAttribute("errorMessage", "Mã đăng nhập hoặc mật khẩu không đúng.");
+        // 
         return "redirect:/login";
     }
 
