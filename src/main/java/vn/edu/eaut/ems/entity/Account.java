@@ -3,7 +3,7 @@ package vn.edu.eaut.ems.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "tai_khoan")
+@Table(name = "tai_khoan", uniqueConstraints = @UniqueConstraint(name = "uq_tai_khoan_email", columnNames = "email"))
 public class Account {
     @Id
     @Column(name = "ma_sv", length = 50)
@@ -24,7 +24,7 @@ public class Account {
     @Column(name = "vai_tro", nullable = false, length = 20)
     private String vaiTro;
 
-    @Column(name = "mat_khau", nullable = false, length = 100)
+    @Column(name = "mat_khau", nullable = false, length = 255)
     private String matKhau;
 
     public Account() {

@@ -1,113 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trang chủ - ClassHub</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <a th:href="@{/}">
-                    <img th:src="@{/assets/logo-text.png}" width="164" height="32">
-                </a>
-            </div>
-            <div class="user-info">
-                <nav class="header-nav">
-                    <!-- Flexbox Bottom Nav -->
-                    <a th:href="@{/}" class="btn-nav active-nav" style="text-decoration: none;">
-                        <i data-lucide="home"></i> <span>Trang chủ</span>
-                    </a>
-                    <a th:href="@{/lich-su}" class="btn-nav" style="text-decoration: none;">
-                        <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
-                    </a>
-                </nav>
-                <div class="divider"></div>
-                <span class="user-greeting" th:if="${session.loggedInUser != null}">
-                    Xin chào, <strong th:text="${session.loggedInUser.hoTen}"></strong>
-                </span>
-                
-                <form th:if="${session.loggedInUser == null}" th:action="@{/login}" method="GET" style="display: inline;">
-                    <button type="submit" class="btn-logout">
-                        <i data-lucide="log-in"></i> <span class="hide-text-mobile">Đăng nhập</span>
-                    </button>
-                </form>
-                
-                <form th:if="${session.loggedInUser != null}" th:action="@{/logout}" method="GET" style="display: inline;">
-                    <button type="submit" class="btn-logout">
-                        <i data-lucide="log-out"></i> <span class="hide-text-mobile">Đăng xuất</span>
-                    </button>
-                </form>
-            </div>
+      <div class="header-container">
+        <div class="logo">
+          <a th:href="@{/}">
+            <img th:src="@{/assets/logo-text.png}" width="164" height="32" />
+          </a>
         </div>
+        <div class="user-info">
+          <nav class="header-nav">
+            <!-- Flexbox Bottom Nav -->
+            <a
+              th:href="@{/}"
+              class="btn-nav active-nav"
+              style="text-decoration: none"
+            >
+              <i data-lucide="home"></i> <span>Trang chủ</span>
+            </a>
+            <a
+              th:href="@{/lich-su}"
+              class="btn-nav"
+              style="text-decoration: none"
+            >
+              <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
+            </a>
+          </nav>
+          <div class="divider"></div>
+          <span class="user-greeting" th:if="${session.loggedInUser != null}">
+            Xin chào, <strong th:text="${session.loggedInUser.hoTen}"></strong>
+          </span>
+
+          <form
+            th:if="${session.loggedInUser == null}"
+            th:action="@{/login}"
+            method="GET"
+            style="display: inline"
+          >
+            <button type="submit" class="btn-logout">
+              <i data-lucide="log-in"></i>
+              <span class="hide-text-mobile">Đăng nhập</span>
+            </button>
+          </form>
+
+          <form
+            th:if="${session.loggedInUser != null}"
+            th:action="@{/logout}"
+            method="GET"
+            style="display: inline"
+          >
+            <button type="submit" class="btn-logout">
+              <i data-lucide="log-out"></i>
+              <span class="hide-text-mobile">Đăng xuất</span>
+            </button>
+          </form>
+        </div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <div id="booking-view">
-            <!-- Filter Section -->
-            <section class="filter-section">
-                <div class="filter-group">
-                    <label for="building-select">Tòa nhà</label>
-                    <select id="building-select" class="form-control">
-                        <option value="ALL">Chọn tất cả</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="shift-select">Ca học</label>
-                    <select id="shift-select" class="form-control">
-                        <option value="" disabled selected>-- Chọn ca học --</option>
-                        <option value="1">Ca 1 (07:00 - 09:30)</option>
-                        <option value="2">Ca 2 (09:30 - 12:00)</option>
-                        <option value="3">Ca 3 (13:00 - 15:30)</option>
-                        <option value="4">Ca 4 (15:30 - 18:00)</option>
-                        <option value="5">Ca 5 (18:00 - 20:30)</option>
-                    </select>
-                </div>
-                <div class="filter-group button-group">
-                    <button class="btn-primary" id="btn-search"><i data-lucide="search"></i> Tìm kiếm</button>
-                </div>
-            </section>
+      <div id="booking-view">
+        <!-- Filter Section -->
+        <section class="filter-section">
+          <div class="filter-group">
+            <label for="building-select">Tòa nhà</label>
+            <select id="building-select" class="form-control">
+              <option value="ALL">Chọn tất cả</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="floor-select">Tầng</label>
+            <select id="floor-select" class="form-control">
+              <option value="ALL">Chọn tất cả</option>
+            </select>
+          </div>
 
-            <section class="room-list" id="room-list">
-                <div class="empty-state">Đang tải danh sách phòng...</div>
-            </section>
-        </div>
+          <div class="filter-group">
+            <label for="shift-select">Ca học</label>
+            <select id="shift-select" class="form-control">
+              <option value="" disabled selected>-- Chọn ca học --</option>
+              <option value="1">Ca 1 (07:00 - 09:30)</option>
+              <option value="2">Ca 2 (09:30 - 12:00)</option>
+              <option value="3">Ca 3 (13:00 - 15:30)</option>
+              <option value="4">Ca 4 (15:30 - 18:00)</option>
+              <option value="5">Ca 5 (18:00 - 20:30)</option>
+            </select>
+          </div>
+          <div class="filter-group button-group">
+            <button class="btn-primary" id="btn-search">
+              <i data-lucide="search"></i> Tìm kiếm
+            </button>
+          </div>
+        </section>
+
+        <section class="room-list" id="room-list">
+          <div class="empty-state">Đang tải danh sách phòng...</div>
+        </section>
+      </div>
     </main>
 
     <!-- Borrow Modal -->
     <div class="modal-backdrop" id="borrow-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Xác nhận mượn phòng</h2>
-                <button class="btn-close" id="btn-close-modal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <p>Bạn có chắc chắn muốn đăng ký mượn <strong id="modal-room-name"></strong> sử dụng trong ngày hôm nay?</p>
-                <div class="modal-details">
-                    <p><strong>Ngày:</strong> <span id="modal-date"></span></p>
-                    <p><strong>Ca:</strong> <span id="modal-shift"></span></p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="btn-cancel-modal">Hủy</button>
-                <button class="btn-primary" id="btn-confirm-modal">Xác nhận</button>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Xác nhận mượn thiết bị</h2>
+          <button class="btn-close" id="btn-close-modal">
+            <i data-lucide="x"></i>
+          </button>
         </div>
+        <div class="modal-body">
+          <p>
+            Bạn có chắc muốn đăng ký mượn thiết bị cho phòng
+            <strong id="modal-room-name"></strong> sử dụng trong ca học này?
+          </p>
+          <div class="modal-details">
+            <p><strong>Ngày:</strong> <span id="modal-date"></span></p>
+            <p><strong>Ca:</strong> <span id="modal-shift"></span></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-cancel-modal">Hủy</button>
+          <button class="btn-primary" id="btn-confirm-modal">
+            Xác nhận
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">
-        <div id="toast-icon-container"></div>
-        <span id="toast-message"></span>
+      <div id="toast-icon-container"></div>
+      <span id="toast-message"></span>
     </div>
 
     <script type="module" th:src="@{/js/home.js}"></script>
-</body>
+  </body>
 </html>

@@ -13,32 +13,29 @@ public class Booking {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "ma_sv")
+    @JoinColumn(name = "ma_sv", nullable = false)
     private Account account;
 
     @ManyToOne
-    @JoinColumn(name = "ma_phong")
+    @JoinColumn(name = "ma_phong", nullable = false)
     private Room room;
 
-    @Column(name = "ngay_muon")
+    @Column(name = "ngay_muon", nullable = false)
     private LocalDate ngayMuon;
 
-    @Column(name = "ca_muon")
+    @Column(name = "ca_muon", nullable = false)
     private Integer caMuon;
 
-    @Column(name = "trang_thai")
+    @Column(name = "trang_thai", nullable = false, length = 20)
     private String trangThai; // ACTIVE, CANCELED, COMPLETED
 
     @Column(name = "thoi_gian_tao", insertable = false, updatable = false)
     private LocalDateTime thoiGianTao;
 
-    @Column(name = "otp")
-    private String otp;
-
     public Booking() {}
 
     public Booking(Integer id, Account account, Room room, LocalDate ngayMuon, Integer caMuon, String trangThai,
-            LocalDateTime thoiGianTao, String otp) {
+            LocalDateTime thoiGianTao) {
         this.id = id;
         this.account = account;
         this.room = room;
@@ -46,7 +43,6 @@ public class Booking {
         this.caMuon = caMuon;
         this.trangThai = trangThai;
         this.thoiGianTao = thoiGianTao;
-        this.otp = otp;
     }
 
     public Integer getId() {
@@ -105,6 +101,4 @@ public class Booking {
         this.thoiGianTao = thoiGianTao;
     }
 
-    public String getOtp() { return otp; }
-    public void setOtp(String otp) { this.otp = otp; }
 }

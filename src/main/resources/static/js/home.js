@@ -1,8 +1,6 @@
-// Global State
 let allBuildings = [];
 let currentSelectedRoomId = null;
 
-// Khởi tạo Lucide Icons
 function initIcons() {
   if (window.lucide) {
     lucide.createIcons();
@@ -13,9 +11,42 @@ function populateBuildingFilter(buildings) {
   const select = document.getElementById("building-select");
   select.innerHTML = '<option value="ALL">Chọn tất cả</option>';
 
-  buildings.forEach((b) => {
-    select.innerHTML += `<option value="${b.maToaNha}">${b.tenToaNha}</option>`;
+  buildings.forEach((building) => {
+    select.innerHTML += `<option value="${building.maToaNha}">${building.tenToaNha}</option>`;
   });
+}
+
+function getRoomFloor(room) {
+  const source = room.maPhong || room.tenPhong || "";
+  const match = source.match(/\d/);
+  return match ? match[0] : null;
+}
+
+function populateFloorFilter(buildings) {
+  const select = document.getElementById("floor-select");
+  const selectedFloor = select.value;
+  const floors = new Set();
+
+  buildings.forEach((building) => {
+    (building.rooms || []).forEach((room) => {
+      const floor = getRoomFloor(room);
+      if (floor) floors.add(floor);
+    });
+  });
+
+  const sortedFloors = [...floors].sort((a, b) => Number(a) - Number(b));
+  select.innerHTML = '<option value="ALL">Chọn tất cả</option>';
+  sortedFloors.forEach((floor) => {
+    select.innerHTML += `<option value="${floor}">Tầng ${floor}</option>`;
+  });
+
+  select.value = sortedFloors.includes(selectedFloor) ? selectedFloor : "ALL";
+}
+
+function getBuildingsForSelectedBuilding() {
+  const selectedBuildingCode = document.getElementById("building-select").value;
+  if (selectedBuildingCode === "ALL") return allBuildings;
+  return allBuildings.filter((building) => building.maToaNha === selectedBuildingCode);
 }
 
 function renderRooms(buildingsToRender) {
@@ -23,12 +54,11 @@ function renderRooms(buildingsToRender) {
   roomList.innerHTML = "";
 
   const hasAnyRoom = buildingsToRender.some(
-    (b) => b.rooms && b.rooms.length > 0,
+    (building) => building.rooms && building.rooms.length > 0,
   );
 
   if (!hasAnyRoom) {
-    roomList.innerHTML =
-      '<p class="no-data empty-state">Không tìm thấy phòng phù hợp.</p>';
+    roomList.innerHTML = '<p class="no-data empty-state">Không tìm thấy phòng phù hợp.</p>';
     return;
   }
 
@@ -50,31 +80,27 @@ function renderRooms(buildingsToRender) {
       const card = document.createElement("div");
       card.className = "room-card" + (isBorrowed ? " borrowed-card" : "");
 
-      let actionButton = "";
-      if (isBorrowed) {
-        actionButton = `<button class="btn-secondary btn-action" disabled style="cursor: not-allowed; opacity: 0.7;">
+      const actionButton = isBorrowed
+        ? `<button class="btn-secondary btn-action" disabled style="cursor: not-allowed; opacity: 0.7;">
                     <i data-lucide="lock"></i> Đang mượn
-                </button>`;
-      } else {
-        actionButton = `<button class="btn-primary btn-action" onclick="openModal('${room.maPhong}', '${room.tenPhong}')">
+                </button>`
+        : `<button class="btn-primary btn-action" onclick="openModal('${room.maPhong}', '${room.tenPhong}')">
                     Đăng ký mượn
                 </button>`;
-      }
 
       let equipmentHtml = "";
       if (room.equipments && room.equipments.length > 0) {
         equipmentHtml = room.equipments
           .map(
-            (e) => `
+            (equipment) => `
                     <li class="equipment-item">
-                        <i data-lucide="check-square"></i> ${e.soLuong} ${e.tenThietBi}
+                        <i data-lucide="check-square"></i> ${equipment.soLuong} ${equipment.tenThietBi}
                     </li>
                 `,
           )
           .join("");
       } else {
-        equipmentHtml =
-          '<li class="equipment-item" style="color: var(--danger);">Phòng trống (Không có đồ)</li>';
+        equipmentHtml = '<li class="equipment-item" style="color: var(--danger);">Phòng trống (Không có đồ)</li>';
       }
 
       card.innerHTML = `
@@ -86,8 +112,8 @@ function renderRooms(buildingsToRender) {
                 </div>
                 <div class="card-body">
                     <div class="equipment-title">Túi đồ bao gồm:</div>
-                    <ul class="equipment-list">      
-                        ${equipmentHtml}          
+                    <ul class="equipment-list">
+                        ${equipmentHtml}
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -103,13 +129,19 @@ function renderRooms(buildingsToRender) {
   initIcons();
 }
 
-// Logic Lọc theo Tòa nhà
 function applyFilters() {
-  const selectedBuildingCode = document.getElementById("building-select").value;
+  const selectedFloor = document.getElementById("floor-select").value;
+  let filtered = getBuildingsForSelectedBuilding();
 
-  let filtered = allBuildings;
-  if (selectedBuildingCode !== "ALL") {
-    filtered = allBuildings.filter((b) => b.maToaNha === selectedBuildingCode);
+  if (selectedFloor !== "ALL") {
+    filtered = filtered
+      .map((building) => ({
+        ...building,
+        rooms: (building.rooms || []).filter(
+          (room) => getRoomFloor(room) === selectedFloor,
+        ),
+      }))
+      .filter((building) => building.rooms.length > 0);
   }
 
   renderRooms(filtered);
@@ -170,7 +202,7 @@ function confirmBorrow() {
         if (!response.ok) throw new Error("Có lỗi xảy ra");
         return response.json();
       })
-      .then((data) => {
+      .then(() => {
         closeModal();
         showToast("Đăng ký mượn phòng thành công!", "success");
 
@@ -213,15 +245,10 @@ function showToast(message, type = "success") {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document
-    .getElementById("btn-close-modal")
-    .addEventListener("click", closeModal);
-  document
-    .getElementById("btn-cancel-modal")
-    .addEventListener("click", closeModal);
-  document
-    .getElementById("btn-confirm-modal")
-    .addEventListener("click", confirmBorrow);
+  document.getElementById("btn-close-modal").addEventListener("click", closeModal);
+  document.getElementById("btn-cancel-modal").addEventListener("click", closeModal);
+  document.getElementById("btn-confirm-modal").addEventListener("click", confirmBorrow);
+
   window.addEventListener("click", (e) => {
     if (e.target.id === "borrow-modal") closeModal();
   });
@@ -231,11 +258,19 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast("Đã cập nhật danh sách phòng", "success");
   });
 
+  document.getElementById("building-select").addEventListener("change", () => {
+    populateFloorFilter(getBuildingsForSelectedBuilding());
+    applyFilters();
+  });
+
+  document.getElementById("floor-select").addEventListener("change", applyFilters);
+
   fetch("/api/buildings")
     .then((response) => response.json())
     .then((data) => {
       allBuildings = data;
       populateBuildingFilter(allBuildings);
+      populateFloorFilter(allBuildings);
       renderRooms(allBuildings);
     })
     .catch((error) => console.error("Lỗi lấy dữ liệu từ API:", error));

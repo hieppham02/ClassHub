@@ -8,10 +8,10 @@ import jakarta.persistence.*;
 public class Building {
     
     @Id
-    @Column(name = "ma_toa_nha")
+    @Column(name = "ma_toa_nha", length = 50)
     private String maToaNha;
     
-    @Column(name = "ten_toa_nha")
+    @Column(name = "ten_toa_nha", nullable = false)
     private String tenToaNha;
 
     @OneToMany(mappedBy = "building", fetch = FetchType.EAGER) // 1-N
