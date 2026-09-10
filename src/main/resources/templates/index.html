@@ -37,6 +37,14 @@
             >
               <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
             </a>
+            <a
+              th:href="@{/admin/dashboard}"
+              th:if="${session.loggedInUser != null and session.loggedInUser.vaiTro == 'ADMIN'}"
+              class="btn-nav"
+              style="text-decoration: none"
+            >
+              <i data-lucide="shield-check"></i> <span>Admin</span>
+            </a>
           </nav>
           <div class="divider"></div>
           <span class="user-greeting" th:if="${session.loggedInUser != null}">
@@ -133,9 +141,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" id="btn-cancel-modal">Hủy</button>
-          <button class="btn-primary" id="btn-confirm-modal">
-            Xác nhận
-          </button>
+          <button class="btn-primary" id="btn-confirm-modal">Xác nhận</button>
         </div>
       </div>
     </div>
