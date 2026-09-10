@@ -53,7 +53,6 @@ public class AuthController {
     public String processLogin(@RequestParam String username, @RequestParam String password, HttpSession session,
             @RequestParam(name = "remember-me", required = false) String rememberMe, HttpServletResponse response,
             RedirectAttributes redirectAttributes) {
-<<<<<<< HEAD
         Optional<Account> accountOpt = accountRepository.findById(username);
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
@@ -65,28 +64,11 @@ public class AuthController {
                     cookie.setPath("/");
                     response.addCookie(cookie);
                 }
-=======
-        System.out.println("Username: " + username);
-        System.out.println("Password: " + password);
-        // Optional<Account> accountOpt = accountRepository.findById(username);
-        // if (accountOpt.isPresent()) {
-        //     Account account = accountOpt.get();
-        //     if (account.getMatKhau().equals(password)) {
-        //         session.setAttribute("loggedInUser", account);
-        //         if (rememberMe != null) {
-        //             Cookie cookie = new Cookie("rememberUser", username);
-        //             cookie.setMaxAge(7 * 24 * 60 * 60);
-        //             cookie.setPath("/");
-        //             response.addCookie(cookie);
-        //         }
->>>>>>> e824af416e7ac9f33e482453c71d50fc57cbb0c7
+                return "redirect:/";
+            }
+        }
 
-        //         return "redirect:/";
-        //     }
-        // }
-
-        // redirectAttributes.addFlashAttribute("errorMessage", "Mã đăng nhập hoặc mật khẩu không đúng.");
-        // 
+        redirectAttributes.addFlashAttribute("errorMessage", "Mã đăng nhập hoặc mật khẩu không đúng.");
         return "redirect:/login";
     }
 
