@@ -4,11 +4,23 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import jakarta.servlet.http.HttpSession;
+import vn.edu.eaut.ems.entity.Account;
+
 @Controller
 public class AdminDashboardController {
 
     @GetMapping("/admin/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(Model model, HttpSession session) {
+        Account currentUser = (Account) session.getAttribute("loggedInUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getVaiTro())) {
+            return "redirect:/";
+        }
+
+        model.addAttribute("currentUser", currentUser);
 
         // ===== MOCK DATA =====
         model.addAttribute("totalStudents", 1250);

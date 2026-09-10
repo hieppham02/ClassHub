@@ -13,17 +13,17 @@ public class Room {
     @Column(name = "ma_phong")
     private String maPhong;
 
-    @Column(name = "ten_phong")
+    @Column(name = "ten_phong", nullable = false)
     private String tenPhong;
 
     @Column(name = "suc_chua")
     private Integer sucChua;
 
-    @Column(name = "trang_thai")
+    @Column(name = "trang_thai", nullable = false, length = 20)
     private String trangThai;
 
     @OneToMany(mappedBy = "room", fetch = FetchType.EAGER)
-    private Set<Equipment> equipments;
+    private Set<RoomEquipment> equipments;
 
     @ManyToOne // N-1
     @JoinColumn(name = "ma_toa_nha") 
@@ -55,6 +55,6 @@ public class Room {
     public Building getBuilding() { return building; }
     public void setBuilding(Building building) { this.building = building; }
 
-    public Set<Equipment> getEquipments() { return equipments; }
-    public void setEquipments(Set<Equipment> equipments) { this.equipments = equipments; }
+    public Set<RoomEquipment> getEquipments() { return equipments; }
+    public void setEquipments(Set<RoomEquipment> equipments) { this.equipments = equipments; }
 }

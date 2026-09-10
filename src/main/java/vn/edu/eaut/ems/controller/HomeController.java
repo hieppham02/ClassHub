@@ -14,7 +14,6 @@ import vn.edu.eaut.ems.entity.Account;
 import vn.edu.eaut.ems.entity.Booking;
 import vn.edu.eaut.ems.entity.Building;
 import vn.edu.eaut.ems.repository.BuildingRepository;
-import vn.edu.eaut.ems.service.MqttService;
 import vn.edu.eaut.ems.repository.BookingRepository;
 
 @Controller // Lưu ý: Dùng @Controller, KHÔNG dùng @RestController
@@ -22,18 +21,17 @@ public class HomeController {
 
     private final BuildingRepository buildingRepository;
     private final BookingRepository bookingRepository;
-    private final MqttService mqttService;
 
-    public HomeController(BuildingRepository buildingRepository, BookingRepository bookingRepository, MqttService mqttService) {
+    public HomeController(BuildingRepository buildingRepository, BookingRepository bookingRepository) {
         this.buildingRepository = buildingRepository;
         this.bookingRepository = bookingRepository;
-        this.mqttService = mqttService;
     }
 
     @GetMapping("/")
     public String showIndex(HttpSession session, Model model) {
         if (session.getAttribute("loggedInUser") == null) {
-            return "redirect:/login"; 
+            //return "redirect:/login"; 
+            return "index"; // Cho phép truy cập trang index mà không cần đăng nhập
         }
 
         List<Building> buildingList = buildingRepository.findAll();
@@ -66,7 +64,6 @@ public class HomeController {
             record.put("caMuon", b.getCaMuon());
             record.put("trangThai", b.getTrangThai());
             record.put("thoiGianTao", b.getThoiGianTao());
-            record.put("otp", b.getOtp());
 
             Map<String, Object> roomData = new HashMap<>();
             roomData.put("tenPhong", b.getRoom().getTenPhong());
