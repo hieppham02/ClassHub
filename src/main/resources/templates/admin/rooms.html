@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassHub - Quản lý phòng học</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status-trong { background-color: #dcfce7; color: #16a34a; }
+        .status-dang-dung { background-color: #dbeafe; color: #2563eb; }
+        .status-bao-tri { background-color: #fee2e2; color: #dc2626; }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-edit { background-color: #fef9c3; color: #ca8a04; }
+        .btn-edit:hover { background-color: #ca8a04; color: #fff; }
+        .btn-del { background-color: #f1f5f9; color: #64748b; }
+        .btn-del:hover { background-color: #ef4444; color: #fff; }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="bi bi-mortarboard-fill"></i>
+                <span>ClassHub</span>
+            </div>
+
+            <div class="admin-title">ADMIN PANEL</div>
+
+            <ul class="menu">
+                <li><a th:href="@{/admin/dashboard}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
+                <li><a th:href="@{/admin/accounts}"><i class="bi bi-people-fill"></i><span>Quản lý tài khoản</span></a></li>
+                <li><a th:href="@{/admin/bookings}"><i class="bi bi-person-workspace"></i><span>Quản lý phiếu mượn</span></a></li>
+                <li class="active"><a th:href="@{/admin/rooms}"><i class="bi bi-door-open-fill"></i><span>Quản lý phòng học</span></a></li>
+                <li><a th:href="@{/admin/buildings}"><i class="bi bi-buildings-fill"></i><span>Quản lý tòa nhà</span></a></li>
+                <li><a th:href="@{/admin/equipment}"><i class="bi bi-box-seam-fill"></i><span>Quản lý thiết bị</span></a></li>
+                <li><a th:href="@{/admin/history}"><i class="bi bi-clock-history"></i><span>Lịch sử mượn trả</span></a></li>
+                <li><a th:href="@{/admin/reports}"><i class="bi bi-bar-chart-fill"></i><span>Báo cáo thống kê</span></a></li>
+                <li><a th:href="@{/admin/settings}"><i class="bi bi-gear-fill"></i><span>Cài đặt</span></a></li>
+            </ul>
+
+            <div class="sidebar-bottom">
+                <a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <div>
+                    <button class="mobile-menu"><i class="bi bi-list"></i></button>
+                    <h4>Quản lý phòng học</h4>
+                    <small>Theo dõi trạng thái, sức chứa và cơ sở vật chất phòng học</small>
+                </div>
+
+                <div class="admin-profile">
+                    <div class="notification"><i class="bi bi-bell"></i><span>3</span></div>
+                    <div class="avatar">A</div>
+                    <div class="profile-info">
+                        <strong>Administrator</strong>
+                        <small>Quản trị viên</small>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT BODY -->
+            <section class="content">
+
+                <!-- FLASH MESSAGE -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- STATS CARDS -->
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="bi bi-door-open-fill"></i></div>
+                            <div>
+                                <p>Tổng số phòng</p>
+                                <h3 th:text="${totalRooms}">0</h3>
+                                <small>Toàn trường</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+                            <div>
+                                <p>Phòng sẵn sàng</p>
+                                <h3 th:text="${availableRooms}">0</h3>
+                                <small class="text-success"><i class="bi bi-dot"></i> Có thể mượn</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="bi bi-person-video3"></i></div>
+                            <div>
+                                <p>Đang sử dụng</p>
+                                <h3 th:text="${occupiedRooms}">0</h3>
+                                <small class="text-primary"><i class="bi bi-dot"></i> Đang học/mượn</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="bi bi-tools"></i></div>
+                            <div>
+                                <p>Đang bảo trì</p>
+                                <h3 th:text="${maintenanceRooms}">0</h3>
+                                <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Tạm ngưng</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLE DANH SÁCH -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="dashboard-card">
+
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <h5 class="mb-1">Danh sách phòng học</h5>
+                                    <span class="text-muted small">Quản lý các phòng và tòa nhà</span>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCreateRoom">
+                                    <i class="bi bi-plus-lg me-1"></i> Thêm phòng học
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã Phòng</th>
+                                            <th>Tên Phòng</th>
+                                            <th>Tòa Nhà</th>
+                                            <th>Sức Chứa</th>
+                                            <th>Trạng Thái</th>
+                                            <th class="text-center">Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${#lists.isEmpty(rooms)}">
+                                            <td colspan="6" class="text-center py-4 text-muted">Chưa có phòng học nào.</td>
+                                        </tr>
+                                        <tr th:each="r : ${rooms}">
+                                            <td>
+                                                <strong class="text-primary" th:text="${r.maPhong}">P401</strong>
+                                            </td>
+                                            <td>
+                                                <strong th:text="${r.tenPhong}">Phòng học 401</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border fw-bold" th:text="${r.building != null ? r.building.tenToaNha : 'Polyco'}">Polyco</span>
+                                            </td>
+                                            <td>
+                                                <span th:text="${r.sucChua != null ? r.sucChua + ' chỗ' : '50 chỗ'}">50 chỗ</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${r.trangThai == 'KHA_DUNG'}" class="badge-status status-trong">
+                                                    <i class="bi bi-check-circle"></i> Sẵn sàng
+                                                </span>
+                                                <span th:if="${r.trangThai == 'DANG_DUNG'}" class="badge-status status-dang-dung">
+                                                    <i class="bi bi-clock"></i> Đang dùng
+                                                </span>
+                                                <span th:if="${r.trangThai == 'BAO_TRI'}" class="badge-status status-bao-tri">
+                                                    <i class="bi bi-tools"></i> Bảo trì
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-flex justify-content-center gap-1">
+                                                    <!-- NÚT SỬA -->
+                                                    <button type="button" class="btn-action btn-edit" title="Chỉnh sửa" 
+                                                            data-bs-toggle="modal" th:data-bs-target="'#modalEditRoom-' + ${r.maPhong}">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+
+                                                    <!-- NÚT XÓA -->
+                                                    <form th:action="@{/admin/rooms/delete}" method="post" class="d-inline"
+                                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa phòng này?');">
+                                                        <input type="hidden" name="maPhong" th:value="${r.maPhong}" />
+                                                        <button type="submit" class="btn-action btn-del" title="Xóa phòng">
+                                                            <i class="bi bi-trash3"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+
+                                                <!-- ================= MODAL SỬA PHÒNG ================= -->
+                                                <div class="modal fade text-start" th:id="'modalEditRoom-' + ${r.maPhong}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <form th:action="@{/admin/rooms/update}" method="post">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Cập nhật phòng <span th:text="${r.maPhong}"></span></h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <input type="hidden" name="maPhong" th:value="${r.maPhong}">
+
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label">Tên Phòng Học:</label>
+                                                                        <input type="text" name="tenPhong" class="form-control" th:value="${r.tenPhong}" required>
+                                                                    </div>
+
+                                                                    <div class="row">
+                                                                        <div class="col-md-6 mb-3">
+                                                                            <label class="form-label">Tòa Nhà:</label>
+                                                                            <select name="toaNha" class="form-select">
+                                                                                <option value="Polyco" th:selected="${r.building != null && r.building.tenToaNha == 'Polyco'}">Polyco</option>
+                                                                                <option value="Đinh Trọng Dật" th:selected="${r.building != null && r.building.tenToaNha == 'Đinh Trọng Dật'}">Đinh Trọng Dật</option>
+                                                                                <option value="EAUT" th:selected="${r.building != null && r.building.tenToaNha == 'EAUT'}">EAUT</option>
+                                                                                <option value="VIỆT NAM " th:selected="${r.building != null && r.building.tenToaNha == 'VIỆT NAM '}">VIỆT NAM </option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="col-md-6 mb-3">
+                                                                            <label class="form-label">Sức chứa (chỗ):</label>
+                                                                            <input type="number" name="sucChua" class="form-control" th:value="${r.sucChua}" required>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label">Trạng thái:</label>
+                                                                        <select name="trangThai" class="form-select">
+                                                                            <option value="KHA_DUNG" th:selected="${r.trangThai == 'KHA_DUNG'}">Sẵn sàng (Trống)</option>
+                                                                            <option value="DANG_DUNG" th:selected="${r.trangThai == 'DANG_DUNG'}">Đang sử dụng</option>
+                                                                            <option value="BAO_TRI" th:selected="${r.trangThai == 'BAO_TRI'}">Bảo trì</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                                    <button type="submit" class="btn btn-warning text-white">Lưu thay đổi</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- ================= MODAL THÊM PHÒNG HỌC MỚI ================= -->
+    <div class="modal fade" id="modalCreateRoom" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/admin/rooms/create}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-plus-circle me-1"></i> Thêm phòng học mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Mã Phòng:</label>
+                            <input type="text" name="maPhong" class="form-control" placeholder="Ví dụ: P501, LAB401, HT02..." required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tên Phòng Học:</label>
+                            <input type="text" name="tenPhong" class="form-control" placeholder="Ví dụ: Phòng học 501, Lab AI..." required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Thuộc Tòa Nhà:</label>
+                                <select name="toaNha" class="form-select">
+                                    <option value="Polyco">Polyco</option>
+                                    <option value="Đinh Trọng Dật">Đinh Trọng Dật</option>
+                                    <option value="EAUT">EAUT</option>
+                                    <option value="VIỆT NAM ">VIỆT NAM </option>
+                                    <option value="Thuận Thành">Thuận Thành</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sức chứa (người):</label>
+                                <input type="number" name="sucChua" class="form-control" value="50" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái:</label>
+                            <select name="trangThai" class="form-select">
+                                <option value="KHA_DUNG">Sẵn sàng (Trống)</option>
+                                <option value="DANG_DUNG">Đang sử dụng</option>
+                                <option value="BAO_TRI">Bảo trì</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Xác nhận thêm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

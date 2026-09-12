@@ -8,10 +8,26 @@
     <title>ClassHub - Admin Dashboard</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status-cho-duyet { background-color: #fef3c7; color: #d97706; }
+        .status-da-duyet { background-color: #dbeafe; color: #2563eb; }
+        .status-da-tra { background-color: #dcfce7; color: #16a34a; }
+        .status-tu-choi { background-color: #fee2e2; color: #dc2626; }
+        .status-uy-quyen { background-color: #ede9fe; color: #7c3aed; }
+        .status-tra-ho { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    </style>
 </head>
 
 <body>
@@ -28,16 +44,18 @@
 
             <div class="admin-title">
                 ADMIN PANEL
-            </div>            <ul class="menu">
-                <li class="active"><a href="/admin/dashboard"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
-                <li><a href="/admin/accounts"><i class="bi bi-people-fill"></i><span>Quản lý tài khoản</span></a></li>
-                <li><a href="/admin/bookings"><i class="bi bi-person-workspace"></i><span>Quản lý phiếu mượn</span></a></li>
-                <li><a href="/admin/rooms"><i class="bi bi-door-open-fill"></i><span>Quản lý phòng học</span></a></li>
-                <li><a href="/admin/buildings"><i class="bi bi-buildings-fill"></i><span>Quản lý tòa nhà</span></a></li>
-                <li><a href="/admin/equipment"><i class="bi bi-box-seam-fill"></i><span>Quản lý thiết bị</span></a></li>
-                <li><a href="/admin/history"><i class="bi bi-clock-history"></i><span>Lịch sử mượn trả</span></a></li>
-                <li><a href="/admin/reports"><i class="bi bi-bar-chart-fill"></i><span>Báo cáo thống kê</span></a></li>
-                <li><a href="/admin/settings"><i class="bi bi-gear-fill"></i><span>Cài đặt</span></a></li>
+            </div>
+
+            <ul class="menu">
+                <li class="active"><a th:href="@{/admin/dashboard}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
+                <li><a th:href="@{/admin/accounts}"><i class="bi bi-people-fill"></i><span>Quản lý tài khoản</span></a></li>
+                <li><a th:href="@{/admin/bookings}"><i class="bi bi-person-workspace"></i><span>Quản lý phiếu mượn</span></a></li>
+                <li><a th:href="@{/admin/rooms}"><i class="bi bi-door-open-fill"></i><span>Quản lý phòng học</span></a></li>
+                <li><a th:href="@{/admin/buildings}"><i class="bi bi-buildings-fill"></i><span>Quản lý tòa nhà</span></a></li>
+                <li><a th:href="@{/admin/equipment}"><i class="bi bi-box-seam-fill"></i><span>Quản lý thiết bị</span></a></li>
+                <li><a th:href="@{/admin/history}"><i class="bi bi-clock-history"></i><span>Lịch sử mượn trả</span></a></li>
+                <li><a th:href="@{/admin/reports}"><i class="bi bi-bar-chart-fill"></i><span>Báo cáo thống kê</span></a></li>
+                <li><a th:href="@{/admin/settings}"><i class="bi bi-gear-fill"></i><span>Cài đặt</span></a></li>
             </ul>
 
             <div class="sidebar-bottom">
@@ -48,7 +66,6 @@
             </div>
 
         </aside>
-
 
         <!-- MAIN -->
         <main class="main-content">
@@ -61,8 +78,8 @@
                         <i class="bi bi-list"></i>
                     </button>
 
-                    <h4>Dashboard</h4>
-                    <small>Chào mừng trở lại, Admin 👋</small>
+                    <h4>Bảng điều khiển tổng quan</h4>
+                    <small>Dữ liệu hệ thống quản lý mượn phòng học cập nhật theo thời gian thực</small>
                 </div>
 
                 <div class="admin-profile">
@@ -72,404 +89,187 @@
                         <span>3</span>
                     </div>
 
-                    <div class="avatar">
+                    <div class="avatar" th:text="${currentUser != null ? currentUser.hoTen.substring(0, 1) : 'A'}">
                         A
                     </div>
 
                     <div class="profile-info">
-                        <strong>Administrator</strong>
-                        <small>Quản trị viên</small>
+                        <strong th:text="${currentUser != null ? currentUser.hoTen : 'Administrator'}">Administrator</strong>
+                        <small th:text="${currentUser != null ? currentUser.vaiTro : 'Quản trị viên'}">Quản trị viên</small>
                     </div>
 
                 </div>
 
             </header>
 
-
             <!-- CONTENT -->
             <section class="content">
 
-                <!-- STATISTICS -->
+                <!-- 4 THẺ THỐNG KÊ DỮ LIỆU THẬT (ĐÃ BỎ DOANH THU) -->
                 <div class="row g-4 mb-4">
 
+                    <!-- THẺ 1: TỔNG PHÒNG HỌC -->
                     <div class="col-xl-3 col-md-6">
-
                         <div class="stat-card">
-
                             <div class="stat-icon blue">
+                                <i class="bi bi-door-open-fill"></i>
+                            </div>
+                            <div>
+                                <p>Tổng phòng học</p>
+                                <h3 th:text="${totalRooms}">240</h3>
+                                <small class="text-primary"><i class="bi bi-buildings"></i> <span th:text="${totalBuildings}">5</span> Tòa nhà</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ 2: CHỜ PHÊ DUYỆT -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                            <div>
+                                <p>Chờ phê duyệt</p>
+                                <h3 th:text="${pendingBookings}">0</h3>
+                                <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Cần xử lý ngay</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ 3: ĐANG MƯỢN PHÒNG -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="bi bi-calendar-check-fill"></i>
+                            </div>
+                            <div>
+                                <p>Đang sử dụng</p>
+                                <h3 th:text="${activeBookings}">0</h3>
+                                <small class="text-primary"><i class="bi bi-dot"></i> Đang mượn</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ 4: TỔNG THÀNH VIÊN (THAY CHO DOANH THU) -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon green">
                                 <i class="bi bi-people-fill"></i>
                             </div>
-
                             <div>
-                                <p>Tổng học sinh</p>
-
-                                <h3 th:text="${totalStudents}">
-                                    1250
-                                </h3>
-
-                                <small class="increase">
-                                    <i class="bi bi-arrow-up"></i>
-                                    12% tháng này
-                                </small>
+                                <p>Tổng thành viên</p>
+                                <h3 th:text="${totalAccounts}">0</h3>
+                                <small class="text-success"><i class="bi bi-check2"></i> <span th:text="${totalStudents}">0</span> Sinh viên</small>
                             </div>
-
                         </div>
-
-                    </div>
-
-
-                    <div class="col-xl-3 col-md-6">
-
-                        <div class="stat-card">
-
-                            <div class="stat-icon purple">
-                                <i class="bi bi-person-workspace"></i>
-                            </div>
-
-                            <div>
-                                <p>Giáo viên</p>
-
-                                <h3 th:text="${totalTeachers}">
-                                    42
-                                </h3>
-
-                                <small class="increase">
-                                    <i class="bi bi-arrow-up"></i>
-                                    5% tháng này
-                                </small>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-xl-3 col-md-6">
-
-                        <div class="stat-card">
-
-                            <div class="stat-icon orange">
-                                <i class="bi bi-mortarboard-fill"></i>
-                            </div>
-
-                            <div>
-                                <p>Lớp học</p>
-
-                                <h3 th:text="${totalClasses}">
-                                    36
-                                </h3>
-
-                                <small>
-                                    Đang hoạt động
-                                </small>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="col-xl-3 col-md-6">
-
-                        <div class="stat-card">
-
-                            <div class="stat-icon green">
-                                <i class="bi bi-cash-stack"></i>
-                            </div>
-
-                            <div>
-                                <p>Doanh thu</p>
-
-                                <h3>
-                                    <span th:text="${totalRevenue}">
-                                        125.500.000
-                                    </span>
-                                    <small>đ</small>
-                                </h3>
-
-                                <small class="increase">
-                                    <i class="bi bi-arrow-up"></i>
-                                    8.5%
-                                </small>
-                            </div>
-
-                        </div>
-
                     </div>
 
                 </div>
 
-
-                <!-- CHARTS -->
-                <div class="row g-4 mb-4">
-
-                    <div class="col-lg-8">
-
-                        <div class="dashboard-card">
-
-                            <div class="card-header">
-
-                                <div>
-                                    <h5>Doanh thu</h5>
-                                    <span>Thống kê doanh thu 6 tháng gần nhất</span>
-                                </div>
-
-                                <select>
-                                    <option>6 tháng</option>
-                                    <option>12 tháng</option>
-                                </select>
-
-                            </div>
-
-                            <div class="chart-container">
-
-                                <div class="fake-chart">
-
-                                    <div class="y-axis">
-                                        <span>150M</span>
-                                        <span>100M</span>
-                                        <span>50M</span>
-                                        <span>0</span>
-                                    </div>
-
-                                    <div class="bars">
-
-                                        <div class="bar-item">
-                                            <div class="bar" style="height:45%"></div>
-                                            <span>Tháng 4</span>
-                                        </div>
-
-                                        <div class="bar-item">
-                                            <div class="bar" style="height:65%"></div>
-                                            <span>Tháng 5</span>
-                                        </div>
-
-                                        <div class="bar-item">
-                                            <div class="bar" style="height:52%"></div>
-                                            <span>Tháng 6</span>
-                                        </div>
-
-                                        <div class="bar-item">
-                                            <div class="bar" style="height:78%"></div>
-                                            <span>Tháng 7</span>
-                                        </div>
-
-                                        <div class="bar-item">
-                                            <div class="bar" style="height:70%"></div>
-                                            <span>Tháng 8</span>
-                                        </div>
-
-                                        <div class="bar-item">
-                                            <div class="bar active" style="height:90%"></div>
-                                            <span>Tháng 9</span>
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- ATTENDANCE -->
-                    <div class="col-lg-4">
-
-                        <div class="dashboard-card attendance-card">
-
-                            <div class="card-header">
-
-                                <div>
-                                    <h5>Điểm danh hôm nay</h5>
-                                    <span>05/09/2026</span>
-                                </div>
-
-                                <i class="bi bi-three-dots"></i>
-
-                            </div>
-
-                            <div class="attendance-chart">
-
-                                <div class="circle">
-
-                                    <div>
-                                        <strong>86%</strong>
-                                        <span>Có mặt</span>
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            <div class="attendance-list">
-
-                                <div>
-                                    <span class="dot present"></span>
-                                    Có mặt
-                                    <strong th:text="${presentStudents}">
-                                        1080
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <span class="dot absent"></span>
-                                    Vắng
-                                    <strong th:text="${absentStudents}">
-                                        120
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <span class="dot late"></span>
-                                    Đi muộn
-                                    <strong th:text="${lateStudents}">
-                                        50
-                                    </strong>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- TABLES -->
+                <!-- TABLES: BẢNG ĐƠN MƯỢN GẦN ĐÂY VÀ THÀNH VIÊN HỆ THỐNG -->
                 <div class="row g-4">
 
-                    <!-- CLASS -->
-                    <div class="col-lg-7">
-
+                    <!-- BẢNG CÁC ĐƠN MƯỢN MỚI NHẤT -->
+                    <div class="col-lg-8">
                         <div class="dashboard-card">
 
-                            <div class="card-header">
-
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <div>
-                                    <h5>Lớp học hôm nay</h5>
-                                    <span>Các lớp đang và sắp học</span>
+                                    <h5 class="mb-1">Yêu cầu mượn phòng gần đây</h5>
+                                    <span class="text-muted small">Các đơn mới phát sinh từ sinh viên</span>
                                 </div>
-
-                                <a href="#">
-                                    Xem tất cả
+                                <a th:href="@{/admin/bookings}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                    Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
                                 </a>
-
                             </div>
 
                             <div class="table-responsive">
-
-                                <table class="table">
-
+                                <table class="table align-middle">
                                     <thead>
-
                                         <tr>
-                                            <th>Lớp</th>
-                                            <th>Giáo viên</th>
-                                            <th>Sĩ số</th>
-                                            <th>Thời gian</th>
-                                            <th></th>
+                                            <th>Mã Đơn</th>
+                                            <th>Người Mượn</th>
+                                            <th>Phòng Học</th>
+                                            <th>Tòa Nhà</th>
+                                            <th>Ca Mượn</th>
+                                            <th>Thời Gian Đặt</th>
+                                            <th>Trạng Thái</th>
                                         </tr>
-
                                     </thead>
-
                                     <tbody>
-
-                                        <tr th:each="classItem : ${classes}">
-
-                                            <td>
-                                                <strong th:text="${classItem[0]}">
-                                                    10A1
-                                                </strong>
-                                            </td>
-
-                                            <td th:text="${classItem[1]}">
-                                                Nguyễn Văn Minh
-                                            </td>
-
-                                            <td th:text="${classItem[2]}">
-                                                35
-                                            </td>
-
-                                            <td>
-                                                <span class="time-badge" th:text="${classItem[3]}">
-                                                    08:00 - 09:30
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <button class="more-btn">
-                                                    <i class="bi bi-three-dots"></i>
-                                                </button>
-                                            </td>
-
+                                        <tr th:if="${#lists.isEmpty(recentBookings)}">
+                                            <td colspan="7" class="text-center py-4 text-muted">Chưa có đơn mượn nào trong CSDL.</td>
                                         </tr>
-
+                                        <tr th:each="b : ${recentBookings}">
+                                            <td>
+                                                <strong class="text-primary" th:text="'#' + ${b.id}">#1</strong>
+                                            </td>
+                                            <td>
+                                                <strong th:text="${b.account != null ? b.account.hoTen : 'N/A'}">Hoàng Văn Hòa</strong>
+                                                <br>
+                                                <small class="text-muted" th:text="${b.account != null ? b.account.maSv : ''}">20231049</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border fw-bold" th:text="${b.room != null ? b.room.tenPhong : 'N/A'}">DTD-101</span>
+                                            </td>
+                                            <td th:text="${b.room != null and b.room.building != null ? b.room.building.tenToaNha : 'Đinh Trọng Dật'}">Đinh Trọng Dật</td>
+                                            <td>
+                                                <span class="badge bg-primary-subtle text-primary border" th:text="'Ca ' + ${b.caMuon}">Ca 1</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted" th:text="${b.thoiGianTao != null ? #temporals.format(b.thoiGianTao, 'dd/MM/yyyy HH:mm') : '--'}">10/05/2026</small>
+                                            </td>
+                                            <td>
+                                                <span th:if="${b.trangThai == 'CHO_DUYET'}" class="badge-status status-cho-duyet">Chờ duyệt</span>
+                                                <span th:if="${b.trangThai == 'DA_DUYET'}" class="badge-status status-da-duyet">Đang mượn</span>
+                                                <span th:if="${b.trangThai == 'DA_TRA'}" class="badge-status status-da-tra">Trả thành công</span>
+                                                <span th:if="${b.trangThai == 'DA_TRA_HO'}" class="badge-status status-tra-ho">Trả hộ thành công</span>
+                                                <span th:if="${b.trangThai == 'DA_UY_QUYEN'}" class="badge-status status-uy-quyen">Đã ủy quyền</span>
+                                                <span th:if="${b.trangThai == 'UY_QUYEN'}" class="badge-status status-duoc-uy-quyen">Được ủy quyền</span>
+                                                <span th:if="${b.trangThai == 'TU_CHOI'}" class="badge-status status-tu-choi">Đã hủy</span>
+                                            </td>
+                                        </tr>
                                     </tbody>
-
                                 </table>
-
                             </div>
 
                         </div>
-
                     </div>
 
-
-                    <!-- STUDENTS -->
-                    <div class="col-lg-5">
-
+                    <!-- DANH SÁCH THÀNH VIÊN TRONG HỆ THỐNG -->
+                    <div class="col-lg-4">
                         <div class="dashboard-card">
 
-                            <div class="card-header">
-
+                            <div class="card-header d-flex justify-content-between align-items-center py-3">
                                 <div>
-                                    <h5>Học sinh mới</h5>
-                                    <span>Học sinh đăng ký gần đây</span>
+                                    <h5 class="mb-1">Thành viên hệ thống</h5>
+                                    <span class="text-muted small">Tài khoản CSDL thật</span>
                                 </div>
-
-                                <a href="#">
-                                    Xem tất cả
+                                <a th:href="@{/admin/accounts}" class="text-primary small" style="text-decoration: none;">
+                                    Quản lý
                                 </a>
-
                             </div>
 
-
-                            <div class="student-list">
-
-                                <div class="student-item" th:each="student : ${recentStudents}">
-
-                                    <div class="student-avatar">
-                                        <span th:text="${student[0].substring(0,1)}">
-                                            N
-                                        </span>
+                            <div class="p-3">
+                                <div th:each="acc : ${recentAccounts}" class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 36px; height: 36px; background: #E0E7FF; color: #4338CA; font-weight: bold;"
+                                             th:text="${acc.hoTen != null ? acc.hoTen.substring(0,1) : 'U'}">
+                                            H
+                                        </div>
+                                        <div>
+                                            <strong class="d-block text-dark" style="font-size: 0.9rem;" th:text="${acc.hoTen}">Hoàng Văn Hòa</strong>
+                                            <small class="text-muted" th:text="${acc.maSv}">20231049</small>
+                                        </div>
                                     </div>
-
-                                    <div class="student-info">
-
-                                        <strong th:text="${student[0]}">
-                                            Nguyễn Văn An
-                                        </strong>
-
-                                        <small th:text="${student[1]}">
-                                            Lớp 10A1
-                                        </small>
-
-                                    </div>
-
-                                    <small class="student-date" th:text="${student[2]}">
-                                        05/09/2026
-                                    </small>
-
+                                    <span th:if="${acc.vaiTro == 'ADMIN'}" class="badge bg-danger-subtle text-danger border">Admin</span>
+                                    <span th:if="${acc.vaiTro == 'SINHVIEN' || acc.vaiTro == 'SINH_VIEN'}" class="badge bg-primary-subtle text-primary border">Sinh viên</span>
+                                    <span th:if="${acc.vaiTro == 'GIANG_VIEN'}" class="badge bg-purple-subtle text-purple border">Giảng viên</span>
                                 </div>
-
                             </div>
 
                         </div>
-
                     </div>
 
                 </div>
@@ -480,8 +280,8 @@
 
     </div>
 
-
-    <script src="/js/admin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin.js}"></script>
 
 </body>
 

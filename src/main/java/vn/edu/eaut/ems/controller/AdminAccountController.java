@@ -1,97 +1,119 @@
 package vn.edu.eaut.ems.controller;
 
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.eaut.ems.entity.Account;
+import vn.edu.eaut.ems.repository.AccountRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping("/admin")
 public class AdminAccountController {
 
-    // Danh sách lưu trữ tạm thời trong RAM (Mock Data)
-    private final List<Account> accountList = new ArrayList<>();
+    private final AccountRepository accountRepository;
 
-    // Khởi tạo dữ liệu mẫu khi ứng dụng khởi chạy
-    @PostConstruct
-    public void initMockData() {
-        Account acc1 = new Account("SV2023001", "123456", "Nguyễn Văn An", "an.nv@eaut.edu.vn", "0912 345 678");
-        acc1.setTenLop("CNTT14-01");
-        acc1.setVaiTro("SINH_VIEN");
-        accountList.add(acc1);
-
-        Account acc2 = new Account("GV001", "123456", "ThS. Lê Hoàng Long", "long.lh@eaut.edu.vn", "0987 654 321");
-        acc2.setTenLop("Khoa CNTT");
-        acc2.setVaiTro("GIANG_VIEN");
-        accountList.add(acc2);
-
-        Account acc3 = new Account("SV2023002", "123456", "Trần Thị Bích", "bich.tt@eaut.edu.vn", "0905 112 233");
-        acc3.setTenLop("DTVT14-02");
-        acc3.setVaiTro("SINH_VIEN");
-        accountList.add(acc3);
-
-        Account acc4 = new Account("AD001", "admin123", "Phạm Minh Đức", "admin@eaut.edu.vn", "0934 889 900");
-        acc4.setTenLop("Phòng Đào Tạo");
-        acc4.setVaiTro("ADMIN");
-        accountList.add(acc4);
-
-        Account acc5 = new Account("GV002", "123456", "TS. Hoàng Mỹ Linh", "linh.hm@eaut.edu.vn", "0978 223 344");
-        acc5.setTenLop("Khoa Ngoại Ngữ");
-        acc5.setVaiTro("GIANG_VIEN");
-        accountList.add(acc5);
-
-        Account acc6 = new Account("SV2023003", "123456", "Vũ Tuấn Kiệt", "kiet.vt@eaut.edu.vn", "0918 556 677");
-        acc6.setTenLop("QTKD14-01");
-        acc6.setVaiTro("SINH_VIEN");
-        accountList.add(acc6);
+    public AdminAccountController(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
     }
 
-    // 1. Hiển thị danh sách tài khoản
-    @GetMapping("/accounts")
+    // =========================================================================
+    // 1. HIỂN THỊ DANH SÁCH TÀI KHOẢN THẬT TỪ BẢNG tai_khoan TRONG MYSQL
+    // =========================================================================
+    @GetMapping("/admin/accounts")
     public String getAccountManagement(Model model) {
-        model.addAttribute("totalAccounts", accountList.size());
-        model.addAttribute("totalStudents", 1250);
-        model.addAttribute("totalTeachers", 42);
-        model.addAttribute("totalClasses", 36);
+        // Lấy tất cả tài khoản thật từ MySQL
+        List<Account> accounts = accountRepository.findAll();
 
-        model.addAttribute("accounts", accountList);
+        // Đếm số lượng thật từ CSDL
+        long totalAccounts = accounts.size();
+        long totalStudents = accounts.stream()
+                .filter(a -> "SINHVIEN".equalsIgnoreCase(a.getVaiTro()) || "SINH_VIEN".equalsIgnoreCase(a.getVaiTro()))
+                .count();
+        long totalTeachers = accounts.stream()
+                .filter(a -> "ADMIN".equalsIgnoreCase(a.getVaiTro()) || "GIANG_VIEN".equalsIgnoreCase(a.getVaiTro()))
+                .count();
+
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("totalAccounts", totalAccounts);
+        model.addAttribute("totalStudents", totalStudents);
+        model.addAttribute("totalTeachers", totalTeachers);
+
         return "admin/accounts";
     }
 
-    // 2. Xử lý lưu thông tin chỉnh sửa tài khoản
-    @PostMapping("/accounts/update")
-    public String updateAccount(@ModelAttribute Account updatedAccount, RedirectAttributes redirectAttributes) {
-        for (Account acc : accountList) {
-            if (acc.getMaSv().equalsIgnoreCase(updatedAccount.getMaSv())) {
-                acc.setHoTen(updatedAccount.getHoTen());
-                acc.setEmail(updatedAccount.getEmail());
-                acc.setSdt(updatedAccount.getSdt());
-                acc.setTenLop(updatedAccount.getTenLop());
-                acc.setVaiTro(updatedAccount.getVaiTro());
-                break;
-            }
+    // =========================================================================
+    // 2. THÊM TÀI KHOẢN MỚI THẲNG VÀO MYSQL
+    // =========================================================================
+    @PostMapping("/admin/accounts/create")
+    public String createAccount(@ModelAttribute Account newAccount, RedirectAttributes redirectAttributes) {
+        if (newAccount.getMaSv() == null || newAccount.getMaSv().isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mã tài khoản không được để trống!");
+            return "redirect:/admin/accounts";
         }
-        redirectAttributes.addFlashAttribute("successMessage", "Cập nhật tài khoản [" + updatedAccount.getMaSv() + "] thành công!");
+
+        String cleanMaSv = newAccount.getMaSv().trim();
+
+        // Kiểm tra xem mã sinh viên / cán bộ đã có trong CSDL chưa
+        if (accountRepository.existsById(cleanMaSv)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mã tài khoản [" + cleanMaSv + "] đã tồn tại trong CSDL!");
+            return "redirect:/admin/accounts";
+        }
+
+        // Đặt giá trị mặc định nếu để trống
+        if (newAccount.getMatKhau() == null || newAccount.getMatKhau().isBlank()) {
+            newAccount.setMatKhau("123456");
+        }
+        if (newAccount.getVaiTro() == null || newAccount.getVaiTro().isBlank()) {
+            newAccount.setVaiTro("SINHVIEN");
+        }
+
+        newAccount.setMaSv(cleanMaSv);
+        accountRepository.save(newAccount); // Lưu trực tiếp vào MySQL
+
+        redirectAttributes.addFlashAttribute("successMessage", "Thêm mới tài khoản [" + cleanMaSv + "] vào CSDL thành công!");
         return "redirect:/admin/accounts";
     }
 
-    // 3. Xử lý xóa tài khoản (MỚI THÊM ĐẦY ĐỦ)
-    @PostMapping("/accounts/delete")
-    public String deleteAccount(@RequestParam("maSv") String maSv, RedirectAttributes redirectAttributes) {
-        // Tìm và xóa phần tử có mã trùng khớp
-        boolean isRemoved = accountList.removeIf(acc -> acc.getMaSv().equalsIgnoreCase(maSv));
+    // =========================================================================
+    // 3. CẬP NHẬT THÔNG TIN TÀI KHOẢN TRONG MYSQL
+    // =========================================================================
+    @PostMapping("/admin/accounts/update")
+    public String updateAccount(@ModelAttribute Account updatedAccount, RedirectAttributes redirectAttributes) {
+        if (updatedAccount.getMaSv() != null && accountRepository.existsById(updatedAccount.getMaSv())) {
+            Account existing = accountRepository.findById(updatedAccount.getMaSv()).orElse(null);
+            if (existing != null) {
+                existing.setHoTen(updatedAccount.getHoTen().trim());
+                existing.setEmail(updatedAccount.getEmail().trim());
+                existing.setSdt(updatedAccount.getSdt() != null ? updatedAccount.getSdt().trim() : null);
+                existing.setTenLop(updatedAccount.getTenLop() != null ? updatedAccount.getTenLop().trim() : null);
+                existing.setVaiTro(updatedAccount.getVaiTro());
 
-        if (isRemoved) {
-            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa tài khoản [" + maSv + "] thành công!");
+                accountRepository.save(existing); // Lưu đè cập nhật vào MySQL
+                redirectAttributes.addFlashAttribute("successMessage", "Cập nhật tài khoản [" + updatedAccount.getMaSv() + "] thành công!");
+            }
         } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy mã tài khoản [" + maSv + "] để xóa!");
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy tài khoản cần cập nhật trong CSDL!");
         }
+        return "redirect:/admin/accounts";
+    }
 
+    // =========================================================================
+    // 4. XÓA TÀI KHOẢN KHỎI MYSQL
+    // =========================================================================
+    @PostMapping("/admin/accounts/delete")
+    public String deleteAccount(@RequestParam("maSv") String maSv, RedirectAttributes redirectAttributes) {
+        if (accountRepository.existsById(maSv)) {
+            try {
+                accountRepository.deleteById(maSv); // Xóa khỏi MySQL
+                redirectAttributes.addFlashAttribute("successMessage", "Đã xóa tài khoản [" + maSv + "] khỏi CSDL!");
+            } catch (Exception e) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa tài khoản này vì đã có lịch sử mượn phòng trong CSDL!");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy tài khoản cần xóa!");
+        }
         return "redirect:/admin/accounts";
     }
 }
