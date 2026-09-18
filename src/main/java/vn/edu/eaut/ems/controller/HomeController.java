@@ -38,7 +38,6 @@ public class HomeController {
         this.accountRepository = accountRepository;
     }
 
-    // 1. TRANG CHỦ
     @GetMapping("/")
     public String showIndex(HttpSession session, Model model) {
         Account currentUser = (Account) session.getAttribute("loggedInUser");
@@ -50,31 +49,11 @@ public class HomeController {
         }
         model.addAttribute("currentUser", currentUser);
 
-        boolean hasActiveBooking = false;
-        String activeRoomName = "";
-        if (currentUser != null) {
-            final String maSv = currentUser.getMaSv();
-            Optional<Booking> activeOpt = bookingRepository.findAll().stream()
-                    .filter(b -> b.getAccount() != null && b.getAccount().getMaSv().equalsIgnoreCase(maSv))
-                    .filter(b -> "CHO_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-                                 "DA_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-                                 "UY_QUYEN".equalsIgnoreCase(b.getTrangThai()))
-                    .findFirst();
-
-            if (activeOpt.isPresent()) {
-                hasActiveBooking = true;
-                activeRoomName = (activeOpt.get().getRoom() != null) ? activeOpt.get().getRoom().getTenPhong() : "đang mượn";
-            }
-        }
-        model.addAttribute("hasActiveBooking", hasActiveBooking);
-        model.addAttribute("activeRoomName", activeRoomName);
-
         List<Building> buildingList = buildingRepository.findAll();
         model.addAttribute("buildings", buildingList);
         return "index";
     }
 
-    // 2. API TIẾP NHẬN ĐĂNG KÝ MƯỢN
     @PostMapping({"/api/bookings", "/api/booking/register"})
     @ResponseBody
     public ResponseEntity<?> handleBookingApi(
@@ -122,20 +101,25 @@ public class HomeController {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "Vui lòng đăng nhập để mượn phòng!"));
         }
 
-        // [LUẬT 1: CHẶN SINH VIÊN ĐANG MƯỢN]
+        final LocalDate targetDate = ngayMuon;
+        final Integer targetCa = caMuon;
         final String userMaSv = currentUser.getMaSv();
-        boolean isStudentBusy = bookingRepository.findAll().stream().anyMatch(b ->
+
+        // 1. CHỈ CHẶN NẾU TRÙNG CÙNG CA HỌC ĐÓ (Cho phép sinh viên mượn ca khác để test nhiều tòa)
+        boolean isStudentBusyInShift = bookingRepository.findAll().stream().anyMatch(b ->
             b.getAccount() != null &&
             b.getAccount().getMaSv().equalsIgnoreCase(userMaSv) &&
-            ("CHO_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-             "DA_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-             "UY_QUYEN".equalsIgnoreCase(b.getTrangThai()))
+            b.getNgayMuon() != null && b.getNgayMuon().isEqual(targetDate) &&
+            b.getCaMuon() != null && b.getCaMuon().equals(targetCa) &&
+            !"DA_TRA".equalsIgnoreCase(b.getTrangThai()) && 
+            !"DA_TRA_HO".equalsIgnoreCase(b.getTrangThai()) &&
+            !"TU_CHOI".equalsIgnoreCase(b.getTrangThai())
         );
 
-        if (isStudentBusy) {
+        if (isStudentBusyInShift) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
-                "message", "Bạn đang có phòng mượn chưa trả (hoặc đơn đang chờ duyệt). Vui lòng trả phòng cũ trước khi mượn thêm!"
+                "message", "Bạn đã có phòng mượn trong Ca " + targetCa + " ngày hôm nay rồi! Vui lòng chọn Ca học khác."
             ));
         }
 
@@ -150,23 +134,21 @@ public class HomeController {
             ));
         }
 
-        // [LUẬT 2: CHẶN PHÒNG ĐÃ CÓ NGƯỜI MƯỢN TRONG CA]
-        final LocalDate targetDate = ngayMuon;
-        final Integer targetCa = caMuon;
+        // 2. CHẶN NẾU PHÒNG ĐÓ ĐÃ CÓ NGƯỜI KHÁC MƯỢN TRONG CA ĐÓ
         boolean isRoomBusy = bookingRepository.findAll().stream().anyMatch(b -> 
             b.getRoom() != null && 
             b.getRoom().getMaPhong().replace("-", "").equalsIgnoreCase(cleanMaPhong) &&
             b.getNgayMuon() != null && b.getNgayMuon().isEqual(targetDate) &&
             b.getCaMuon() != null && b.getCaMuon().equals(targetCa) &&
-            ("CHO_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-             "DA_DUYET".equalsIgnoreCase(b.getTrangThai()) || 
-             "UY_QUYEN".equalsIgnoreCase(b.getTrangThai()))
+            !"DA_TRA".equalsIgnoreCase(b.getTrangThai()) && 
+            !"DA_TRA_HO".equalsIgnoreCase(b.getTrangThai()) &&
+            !"TU_CHOI".equalsIgnoreCase(b.getTrangThai())
         );
 
         if (isRoomBusy) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
-                "message", "Phòng " + room.getTenPhong() + " đã có người mượn hoặc đang chờ duyệt trong ca này rồi!"
+                "message", "Phòng " + room.getTenPhong() + " đã có người mượn trong Ca " + targetCa + " rồi!"
             ));
         }
 
@@ -185,7 +167,6 @@ public class HomeController {
         ));
     }
 
-    // 3. TRANG LỊCH SỬ MƯỢN
     @GetMapping("/lich-su")
     public String showHistoryPage(HttpSession session, Model model) {
         if (session.getAttribute("loggedInUser") == null) {
@@ -194,7 +175,6 @@ public class HomeController {
         return "history"; 
     }
 
-    // 4. API LẤY LỊCH SỬ MƯỢN
     @GetMapping("/api/lich-su")
     @ResponseBody
     public ResponseEntity<?> getMyHistoryApi(HttpSession session) {
@@ -217,8 +197,14 @@ public class HomeController {
             roomData.put("tenPhong", b.getRoom().getTenPhong());
 
             Map<String, Object> buildingData = new HashMap<>();
-            buildingData.put("tenToaNha", b.getRoom().getBuilding().getTenToaNha());
+            String toaNha = "Đinh Trọng Dật";
+            String code = b.getRoom().getMaPhong().toUpperCase();
+            if (code.startsWith("EAUT")) toaNha = "EAUT";
+            else if (code.startsWith("PLC")) toaNha = "POLYCO";
+            else if (code.startsWith("TT")) toaNha = "Thuận Thành";
+            else if (code.startsWith("VNB")) toaNha = "Việt Nam Building";
 
+            buildingData.put("tenToaNha", toaNha);
             roomData.put("building", buildingData);
             record.put("room", roomData);
 
@@ -228,7 +214,6 @@ public class HomeController {
         return ResponseEntity.ok(responseData);
     }
 
-    // 5. API ỦY QUYỀN TRẢ PHÒNG
     @PostMapping("/api/bookings/{id}/delegate")
     @ResponseBody
     public ResponseEntity<?> delegateBooking(@PathVariable("id") Integer id,
@@ -237,25 +222,16 @@ public class HomeController {
 
         Booking oldBooking = bookingRepository.findById(id).orElse(null);
         if (oldBooking == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", "Không tìm thấy phiếu mượn này!"
-            ));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Không tìm thấy phiếu mượn này!"));
         }
 
         if ("DA_UY_QUYEN".equalsIgnoreCase(oldBooking.getTrangThai()) || "UY_QUYEN".equalsIgnoreCase(oldBooking.getTrangThai())) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", "Đơn này đã được ủy quyền, không thể ủy quyền tiếp!"
-            ));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Đơn này đã được ủy quyền, không thể ủy quyền tiếp!"));
         }
 
         Account newStudent = accountRepository.findById(maSv.trim()).orElse(null);
         if (newStudent == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", "Không tìm thấy sinh viên có mã: " + maSv
-            ));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Không tìm thấy sinh viên có mã: " + maSv));
         }
 
         oldBooking.setTrangThai("DA_UY_QUYEN");
@@ -266,7 +242,7 @@ public class HomeController {
         newBooking.setRoom(oldBooking.getRoom());
         newBooking.setNgayMuon(oldBooking.getNgayMuon());
         newBooking.setCaMuon(oldBooking.getCaMuon());
-        newBooking.setTrangThai("UY_QUYEN"); // Đơn cho người nhận
+        newBooking.setTrangThai("UY_QUYEN");
         bookingRepository.save(newBooking);
 
         return ResponseEntity.ok(Map.of(
@@ -275,21 +251,16 @@ public class HomeController {
         ));
     }
 
-    // =========================================================================
-    // 6. [CẬP NHẬT] XÁC NHẬN TRẢ: NẾU LÀ ĐƠN ỦY QUYỀN THÌ GÁN LÀ "DA_TRA_HO"
-    // =========================================================================
     @PostMapping("/api/bookings/{id}/return")
     @ResponseBody
     public ResponseEntity<?> returnBookingApi(@PathVariable("id") Integer id) {
         Booking booking = bookingRepository.findById(id).orElse(null);
         if (booking != null) {
-            // NẾU LÀ ĐƠN ĐƯỢC ỦY QUYỀN -> ĐÁNH DẤU TRẠNG THÁI LÀ DA_TRA_HO (TRẢ HỘ)
             if ("UY_QUYEN".equalsIgnoreCase(booking.getTrangThai())) {
                 booking.setTrangThai("DA_TRA_HO");
             } else {
                 booking.setTrangThai("DA_TRA");
             }
-
             bookingRepository.save(booking);
             return ResponseEntity.ok(Map.of("success", true, "message", "Trả thiết bị thành công!"));
         }

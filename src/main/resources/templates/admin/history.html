@@ -26,13 +26,7 @@
         .status-tu-choi { background-color: #fee2e2; color: #dc2626; }
         .status-uy-quyen { background-color: #ede9fe; color: #7c3aed; }
         .status-duoc-uy-quyen { background-color: #e0e7ff; color: #4338ca; }
-
-        /* Huy hiệu đặc biệt: Trả hộ thành công */
-        .status-tra-ho {
-            background-color: #ecfdf5;
-            color: #047857;
-            border: 1px solid #a7f3d0;
-        }
+        .status-tra-ho { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
     </style>
 </head>
 
@@ -74,7 +68,7 @@
                 <div>
                     <button class="mobile-menu"><i class="bi bi-list"></i></button>
                     <h4>Nhật ký mượn trả phòng</h4>
-                    <small>Toàn bộ lịch sử mượn phòng, ủy quyền và trả phòng từ CSDL MySQL</small>
+                    <small>Toàn bộ lịch sử mượn phòng từ CSDL MySQL phân loại chính xác theo từng tòa nhà</small>
                 </div>
 
                 <div class="admin-profile">
@@ -150,7 +144,7 @@
 
                             <div class="card-header py-3">
                                 <h5 class="mb-1">Nhật ký chi tiết các phiên mượn</h5>
-                                <span class="text-muted small">Kiểm tra thông tin người mượn, người được ủy quyền và kết quả mượn trả</span>
+                                <span class="text-muted small">Hiển thị đúng Tòa nhà và Phòng học thực tế đã mượn</span>
                             </div>
 
                             <div class="table-responsive">
@@ -170,20 +164,18 @@
                                     </thead>
                                     <tbody>
                                         <tr th:if="${#lists.isEmpty(historyList)}">
-                                            <td colspan="9" class="text-center py-4 text-muted">Chưa có bản ghi lịch sử nào trong CSDL.</td>
+                                            <td colspan="9" class="text-center py-4 text-muted">Chưa có bản ghi lịch sử nào trong CSDL MySQL.</td>
                                         </tr>
                                         <tr th:each="h : ${historyList}">
                                             <td>
                                                 <strong class="text-primary" th:text="'#' + ${h.id}">#1</strong>
                                             </td>
 
-                                            <!-- THÔNG TIN NGƯỜI MƯỢN (CÓ GẮN NHÃN NGƯỜI ĐƯỢC ỦY QUYỀN) -->
                                             <td>
                                                 <strong class="text-dark" th:text="${h.account != null ? h.account.hoTen : 'N/A'}">Hoàng Văn Hòa</strong>
                                                 <br>
                                                 <small class="text-muted" th:text="${h.account != null ? 'Mã SV: ' + h.account.maSv : ''}">Mã SV: 20231049</small>
 
-                                                <!-- GẮN DẤU HIỆU NHẬN BIẾT NGƯỜI ĐƯỢC ỦY QUYỀN -->
                                                 <div th:if="${h.trangThai == 'UY_QUYEN' || h.trangThai == 'DA_TRA_HO'}" class="mt-1">
                                                     <span class="badge" style="background: #EDE9FE; color: #7C3AED; font-size: 0.72rem; padding: 3px 8px; border: 1px solid #DDD6FE;">
                                                         <i class="bi bi-person-check-fill"></i> Người được ủy quyền
@@ -194,7 +186,13 @@
                                             <td>
                                                 <span class="badge bg-light text-dark border fw-bold" th:text="${h.room != null ? h.room.tenPhong : 'N/A'}">PLC-202</span>
                                             </td>
-                                            <td th:text="${h.room != null and h.room.building != null ? h.room.building.tenToaNha : 'POLYCO'}">POLYCO</td>
+
+                                            <!-- ================= CỘT TÒA NHÀ: ĐÃ SỬA HIỂN THỊ CHÍNH XÁC ================= -->
+                                            <td>
+                                                <span class="badge bg-light text-dark border" 
+                                                      th:text="${h.room != null and h.room.building != null ? h.room.building.tenToaNha : 'Khác'}">POLYCO</span>
+                                            </td>
+
                                             <td th:text="${h.ngayMuon}">2026-09-11</td>
                                             <td>
                                                 <span class="badge bg-primary-subtle text-primary border" th:text="'Ca ' + ${h.caMuon}">Ca 1</span>
@@ -203,39 +201,26 @@
                                                 <small class="text-muted" th:text="${h.thoiGianTao != null ? #temporals.format(h.thoiGianTao, 'dd/MM/yyyy HH:mm') : '--'}">11/09/2026 01:05</small>
                                             </td>
 
-                                            <!-- ================= CỘT TRẠNG THÁI: KHÔNG CÒN BỊ TRỐNG Ô ================= -->
+                                            <!-- CỘT TRẠNG THÁI -->
                                             <td>
-                                                <!-- TRẢ HỘ THÀNH CÔNG -->
                                                 <span th:if="${h.trangThai == 'DA_TRA_HO'}" class="badge-status status-tra-ho">
                                                     <i class="bi bi-shield-check"></i> Trả hộ thành công
                                                 </span>
-
-                                                <!-- TRẢ THÀNH CÔNG BÌNH THƯỜNG -->
                                                 <span th:if="${h.trangThai == 'DA_TRA'}" class="badge-status status-da-tra">
                                                     <i class="bi bi-check2-all"></i> Trả thành công
                                                 </span>
-
-                                                <!-- ĐÃ ỦY QUYỀN (NGƯỜI NHỜ) -->
                                                 <span th:if="${h.trangThai == 'DA_UY_QUYEN'}" class="badge-status status-uy-quyen">
                                                     <i class="bi bi-person-check-fill"></i> Đã ủy quyền
                                                 </span>
-
-                                                <!-- ĐƯỢC ỦY QUYỀN (NGƯỜI NHẬN - CHƯA TRẢ) -->
                                                 <span th:if="${h.trangThai == 'UY_QUYEN'}" class="badge-status status-duoc-uy-quyen">
                                                     <i class="bi bi-shield-check"></i> Được ủy quyền
                                                 </span>
-
-                                                <!-- ĐANG MƯỢN -->
                                                 <span th:if="${h.trangThai == 'DA_DUYET'}" class="badge-status status-da-duyet">
                                                     <i class="bi bi-clock-history"></i> Đang mượn
                                                 </span>
-
-                                                <!-- CHỜ DUYỆT -->
                                                 <span th:if="${h.trangThai == 'CHO_DUYET'}" class="badge-status status-cho-duyet">
                                                     <i class="bi bi-hourglass-split"></i> Chờ duyệt
                                                 </span>
-
-                                                <!-- ĐÃ HỦY -->
                                                 <span th:if="${h.trangThai == 'TU_CHOI'}" class="badge-status status-tu-choi">
                                                     <i class="bi bi-x-circle"></i> Đã hủy
                                                 </span>

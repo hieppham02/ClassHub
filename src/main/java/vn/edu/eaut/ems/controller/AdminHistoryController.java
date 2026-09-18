@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.eaut.ems.entity.Booking;
+import vn.edu.eaut.ems.entity.Building;
 import vn.edu.eaut.ems.repository.BookingRepository;
 
 import java.util.List;
@@ -20,10 +21,32 @@ public class AdminHistoryController {
         this.bookingRepository = bookingRepository;
     }
 
-    // 1. ĐỌC TOÀN BỘ LỊCH SỬ THẬT TỪ BẢNG phieu_muon TRONG MYSQL
+    private void fixBuildingForBooking(Booking b) {
+        if (b.getRoom() != null) {
+            String code = (b.getRoom().getMaPhong() != null ? b.getRoom().getMaPhong() : b.getRoom().getTenPhong()).toUpperCase();
+            Building bld = new Building();
+            if (code.startsWith("EAUT")) {
+                bld.setTenToaNha("EAUT");
+            } else if (code.startsWith("PLC") || code.contains("POLYCO")) {
+                bld.setTenToaNha("POLYCO");
+            } else if (code.startsWith("TT") || code.contains("THUẬN THÀNH")) {
+                bld.setTenToaNha("Thuận Thành");
+            } else if (code.startsWith("VNB") || code.contains("VIỆT NAM")) {
+                bld.setTenToaNha("Việt Nam Building");
+            } else {
+                bld.setTenToaNha("Đinh Trọng Dật");
+            }
+            b.getRoom().setBuilding(bld);
+        }
+    }
+
     @GetMapping("/admin/history")
     public String getHistory(Model model) {
         List<Booking> allBookings = bookingRepository.findAllByOrderByThoiGianTaoDesc();
+
+        for (Booking b : allBookings) {
+            fixBuildingForBooking(b);
+        }
 
         long totalLogs = allBookings.size();
         long completedLogs = allBookings.stream()
@@ -42,12 +65,11 @@ public class AdminHistoryController {
         return "admin/history";
     }
 
-    // 2. XÓA BẢN GHI LỊCH SỬ KHỎI CSDL THẬT
     @PostMapping("/admin/history/delete")
     public String deleteHistory(@RequestParam("id") Integer id, RedirectAttributes redirectAttributes) {
         if (bookingRepository.existsById(id)) {
             bookingRepository.deleteById(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa bản ghi lịch sử #" + id + " khỏi cơ sở dữ liệu!");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa bản ghi lịch sử #" + id + " khỏi CSDL!");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy bản ghi lịch sử để xóa!");
         }

@@ -16,7 +16,7 @@
     <style>
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 320px;
             width: 100%;
         }
         @media print {
@@ -69,7 +69,7 @@
                 <div>
                     <button class="mobile-menu"><i class="bi bi-list"></i></button>
                     <h4>Báo cáo & Thống kê</h4>
-                    <small>Dữ liệu phân tích trực tiếp từ CSDL Quản lý phiếu mượn</small>
+                    <small>Phân tích quy mô cơ sở vật chất và tần suất sử dụng phòng học</small>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
@@ -89,7 +89,7 @@
             <!-- CONTENT BODY -->
             <section class="content">
 
-                <!-- 4 THẺ CHỈ SỐ LIÊN KẾT TRỰC TIẾP VỚI CSDL -->
+                <!-- 4 THẺ CHỈ SỐ KPI -->
                 <div class="row g-4 mb-4">
                     <div class="col-xl-3 col-md-6">
                         <div class="stat-card">
@@ -108,7 +108,7 @@
                             <div>
                                 <p>Đang sử dụng</p>
                                 <h3 th:text="${activeBookings}">0</h3>
-                                <small class="text-primary">Đơn đã duyệt / mượn</small>
+                                <small class="text-primary">Đang sử dụng phòng</small>
                             </div>
                         </div>
                     </div>
@@ -136,14 +136,14 @@
                     </div>
                 </div>
 
-                <!-- 2 BIỂU ĐỒ TRỰC QUAN TỰ ĐỘNG CẬP NHẬT -->
+                <!-- 2 BIỂU ĐỒ -->
                 <div class="row g-4 mb-4">
-                    <!-- Biểu đồ cột: Lượt mượn theo 5 Ca học -->
+                    <!-- Biểu đồ cột: Theo Ca học -->
                     <div class="col-lg-7">
                         <div class="dashboard-card h-100">
                             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Tần suất mượn theo Ca học</h5>
-                                <span class="badge bg-primary-subtle text-primary border">Dữ liệu thực</span>
+                                <span class="badge bg-primary-subtle text-primary border">Theo ca học</span>
                             </div>
                             <div class="p-3">
                                 <div class="chart-container">
@@ -153,11 +153,11 @@
                         </div>
                     </div>
 
-                    <!-- Biểu đồ tròn: Lượt mượn theo Tòa nhà -->
+                    <!-- ================= BIỂU ĐỒ TRÒN: TỶ TRỌNG SỐ LƯỢNG PHÒNG HỌC (%) ================= -->
                     <div class="col-lg-5">
                         <div class="dashboard-card h-100">
                             <div class="card-header py-3">
-                                <h5 class="mb-0">Phân bố mượn theo Tòa nhà</h5>
+                                <h5 class="mb-0">Quy mô phòng theo Tòa nhà (%)</h5>
                             </div>
                             <div class="p-3">
                                 <div class="chart-container">
@@ -168,49 +168,49 @@
                     </div>
                 </div>
 
-                <!-- BẢNG XẾP HẠNG TOP PHÒNG HỌC ĐƯỢC MƯỢN NHIỀU NHẤT -->
+                <!-- BẢNG TOP PHÒNG HỌC CÒN TRỐNG -->
                 <div class="row">
                     <div class="col-12">
                         <div class="dashboard-card">
-                            <div class="card-header py-3">
-                                <h5 class="mb-1">Top phòng học được mượn nhiều nhất</h5>
-                                <span class="text-muted small">Tự động xếp hạng dựa trên tổng số lượt mượn thực tế từ CSDL</span>
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1 text-success"><i class="bi bi-check-circle-fill me-1"></i> Danh sách phòng học còn trống (Sẵn sàng sử dụng)</h5>
+                                    <span class="text-muted small">Các phòng học chưa có ai mượn, sẵn sàng bàn giao cho giảng viên & sinh viên</span>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border px-3 py-2">Khả dụng</span>
                             </div>
                             <div class="table-responsive">
                                 <table class="table align-middle">
                                     <thead>
                                         <tr>
-                                            <th>Hạng</th>
+                                            <th>STT</th>
                                             <th>Mã Phòng</th>
                                             <th>Tên Phòng</th>
                                             <th>Tòa Nhà</th>
-                                            <th>Số Lượt Mượn</th>
-                                            <th>Thời Lượng Ước Tính</th>
-                                            <th>Tỷ Trọng Mượn</th>
+                                            <th>Sức Chứa</th>
+                                            <th>Khả Dụng Trong Ngày</th>
+                                            <th>Tình Trạng</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr th:if="${#lists.isEmpty(topRooms)}">
-                                            <td colspan="7" class="text-center py-4 text-muted">Chưa có đủ dữ liệu mượn để xếp hạng.</td>
+                                        <tr th:if="${#lists.isEmpty(freeRooms)}">
+                                            <td colspan="7" class="text-center py-4 text-muted">Hiện tại tất cả các phòng đều đang bận.</td>
                                         </tr>
-                                        <tr th:each="r, stat : ${topRooms}">
+                                        <tr th:each="r, stat : ${freeRooms}">
                                             <td>
-                                                <span class="badge rounded-circle p-2" 
-                                                      th:classappend="${stat.index == 0 ? 'bg-warning text-dark' : (stat.index == 1 ? 'bg-secondary text-white' : (stat.index == 2 ? 'bg-danger text-white' : 'bg-light text-dark border'))}"
-                                                      th:text="${stat.index + 1}">1</span>
+                                                <span class="badge rounded-circle p-2 bg-light text-dark border" th:text="${stat.index + 1}">1</span>
                                             </td>
                                             <td><strong class="text-primary" th:text="${r.maPhong}">DTD101</strong></td>
-                                            <td th:text="${r.tenPhong}">DTD-101</td>
-                                            <td><span class="badge bg-light text-dark border" th:text="${r.toaNha}">Đinh Trọng Dật</span></td>
-                                            <td><strong th:text="${r.soLuotMuon} + ' lượt'">1 lượt</strong></td>
-                                            <td th:text="${r.tongGio} + ' giờ'">2.5 giờ</td>
+                                            <td><strong class="text-dark" th:text="${r.tenPhong}">DTD-101</strong></td>
+                                            <td><span class="badge bg-light text-dark border fw-bold" th:text="${r.toaNha}">Đinh Trọng Dật</span></td>
+                                            <td th:text="${r.sucChua} + ' chỗ'">70 chỗ</td>
                                             <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                                        <div class="progress-bar bg-primary" th:style="'width: ' + ${r.tyLe}"></div>
-                                                    </div>
-                                                    <small class="fw-bold" th:text="${r.tyLe}">50%</small>
-                                                </div>
+                                                <span class="badge bg-primary-subtle text-primary border" th:text="${r.soCaTrong}">5/5 ca trống</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                                    <i class="bi bi-check2-circle"></i> Sẵn sàng 100%
+                                                </span>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -224,14 +224,13 @@
         </main>
     </div>
 
-    <!-- SCRIPT VẼ BIỂU ĐỒ VỚI DỮ LIỆU THẬT TỪ CSDL -->
+    <!-- SCRIPT VẼ BIỂU ĐỒ VỚI HIỂN THỊ RÕ % QUY MÔ PHÒNG HỌC -->
     <script th:inline="javascript">
-        /* Lấy dữ liệu từ Spring Boot */
         const shiftData = /*[[${chartCaData}]]*/ [0, 0, 0, 0, 0];
-        const buildingLabels = /*[[${chartBuildingLabels}]]*/ ['Đinh Trọng Dật', 'POLYCO', 'EAUT'];
-        const buildingData = /*[[${chartBuildingData}]]*/ [0, 0, 0];
+        const buildingLabels = /*[[${chartBuildingLabels}]]*/ ['Đinh Trọng Dật', 'POLYCO', 'EAUT', 'Thuận Thành', 'Việt Nam Building'];
+        const buildingData = /*[[${chartBuildingData}]]*/ [48, 48, 48, 48, 48];
 
-        // 1. Biểu đồ cột: Tần suất theo Ca học
+        // 1. Biểu đồ cột theo Ca học
         const ctxShift = document.getElementById('shiftChart').getContext('2d');
         new Chart(ctxShift, {
             type: 'bar',
@@ -254,7 +253,7 @@
             }
         });
 
-        // 2. Biểu đồ tròn: Tỷ lệ theo Tòa nhà
+        // 2. BIỂU ĐỒ TRÒN: HIỆN % SỐ PHÒNG MỖI TÒA NHÀ CHIẾM
         const ctxBuilding = document.getElementById('buildingChart').getContext('2d');
         new Chart(ctxBuilding, {
             type: 'doughnut',
@@ -262,7 +261,13 @@
                 labels: buildingLabels,
                 datasets: [{
                     data: buildingData,
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
+                    backgroundColor: [
+                        '#3b82f6', // Đinh Trọng Dật (Xanh dương)
+                        '#10b981', // POLYCO (Xanh lá)
+                        '#f59e0b', // EAUT (Vàng cam)
+                        '#8b5cf6', // Thuận Thành (Tím)
+                        '#ef4444'  // Việt Nam Building (Đỏ)
+                    ],
                     borderWidth: 2
                 }]
             },
@@ -270,7 +275,40 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    // HIỆN RÕ % TỶ TRỌNG PHÒNG TRONG CHÚ THÍCH
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    return data.labels.map((label, i) => {
+                                        const val = data.datasets[0].data[i];
+                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
+                                        return {
+                                            text: `${label}: ${pct} (${val} phòng)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    // RÊ CHUỘT VÀO VÒNG TRÒN HIỆN RÕ SỐ PHÒNG VÀ %
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const val = context.raw || 0;
+                                const total = context.chart._metasets[context.datasetIndex].total;
+                                const pct = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
+                                return ` ${label}: ${pct} (Tổng ${val} phòng học)`;
+                            }
+                        }
+                    }
                 }
             }
         });
