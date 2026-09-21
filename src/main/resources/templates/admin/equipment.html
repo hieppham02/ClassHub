@@ -2,10 +2,22 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClassHub - Quản lý thiết bị</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .equipment-tabs .nav-link { color: #64748b; font-weight: 600; }
+        .equipment-tabs .nav-link.active { color: #2563eb; }
+        .filter-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .room-summary { min-height: 74px; }
+        .allocation-empty { display: none; }
+        @media (max-width: 767.98px) {
+            .equipment-actions { width: 100%; }
+            .equipment-actions .btn { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 <div class="admin-wrapper">
@@ -23,124 +35,264 @@
             <li><a th:href="@{/admin/reports}"><i class="bi bi-bar-chart-fill"></i><span>Báo cáo thống kê</span></a></li>
             <li><a th:href="@{/admin/settings}"><i class="bi bi-gear-fill"></i><span>Cài đặt</span></a></li>
         </ul>
-        <div class="sidebar-bottom"><a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></div>
+        <div class="sidebar-bottom">
+            <a th:href="@{/}" target="_blank" rel="noopener noreferrer"><i class="bi bi-house-door"></i> Mở trang chủ</a>
+            <a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+        </div>
     </aside>
 
     <main class="main-content">
         <header class="topbar">
-            <div><h4>Quản lý thiết bị</h4><small>Kiểm kê máy chiếu, âm thanh, điều hòa phòng học</small></div>
+            <div>
+                <button class="mobile-menu"><i class="bi bi-list"></i></button>
+                <h4>Quản lý thiết bị</h4>
+                <small>Quản lý kho thiết bị chung và phân bổ thiết bị cho từng phòng học</small>
+            </div>
             <div class="admin-profile"><div class="avatar">A</div><div class="profile-info"><strong>Administrator</strong><small>Quản trị viên</small></div></div>
         </header>
 
         <section class="content">
-            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm"><i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-
-            <!-- STATS -->
-            <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-box-seam-fill"></i></div><div><p>Tổng thiết bị</p><h3 th:text="${totalEquipments}">0</h3></div></div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card"><div class="stat-icon green"><i class="bi bi-check-circle"></i></div><div><p>Hoạt động tốt</p><h3 th:text="${goodEquipments}">0</h3></div></div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card"><div class="stat-icon purple"><i class="bi bi-lightning-charge"></i></div><div><p>Đang sử dụng</p><h3 th:text="${inUseEquipments}">0</h3></div></div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card"><div class="stat-icon orange"><i class="bi bi-exclamation-triangle"></i></div><div><p>Hỏng / Bảo trì</p><h3 th:text="${brokenEquipments}">0</h3></div></div>
-                </div>
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
-            <!-- TABLE -->
-            <div class="dashboard-card">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <h5 class="mb-0">Danh sách trang thiết bị</h5>
-                    <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalAddEquip"><i class="bi bi-plus-lg me-1"></i> Thêm thiết bị</button>
-                </div>
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Mã TB</th>
-                                <th>Tên Thiết Bị</th>
-                                <th>Loại</th>
-                                <th>Vị Trí Đặt</th>
-                                <th>SL</th>
-                                <th>Tình Trạng</th>
-                                <th class="text-center">Thao Tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="e : ${equipments}">
-                                <td><strong class="text-primary" th:text="${e.maTb}">TB01</strong></td>
-                                <td><strong th:text="${e.tenTb}">Máy chiếu</strong></td>
-                                <td><span class="badge bg-light text-dark border" th:text="${e.loaiTb}">Trình chiếu</span></td>
-                                <td th:text="${e.viTri}">P401 - Polyco</td>
-                                <td th:text="${e.soLuong}">1</td>
-                                <td>
-                                    <span th:if="${e.tinhTrang == 'TOT'}" class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Tốt / Trống</span>
-                                    <span th:if="${e.tinhTrang == 'DANG_DUNG'}" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2">Đang dùng</span>
-                                    <span th:if="${e.tinhTrang == 'HONG'}" class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2">Bị hỏng</span>
-                                </td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-light text-warning me-1" data-bs-toggle="modal" th:data-bs-target="'#editEquip-' + ${e.maTb}"><i class="bi bi-pencil-square"></i></button>
-                                    <form th:action="@{/admin/equipment/delete}" method="post" class="d-inline" onsubmit="return confirm('Xóa thiết bị này?');">
-                                        <input type="hidden" name="maTb" th:value="${e.maTb}">
-                                        <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash3"></i></button>
-                                    </form>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4 col-md-6"><div class="stat-card"><div class="stat-icon blue"><i class="bi bi-box-seam-fill"></i></div><div><p>Loại thiết bị trong kho</p><h3 th:text="${totalEquipmentTypes}">0</h3></div></div></div>
+                <div class="col-lg-4 col-md-6"><div class="stat-card"><div class="stat-icon purple"><i class="bi bi-diagram-3-fill"></i></div><div><p>Phòng đã được phân bổ</p><h3 th:text="${allocatedRooms}">0</h3></div></div></div>
+                <div class="col-lg-4 col-md-6"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-stack"></i></div><div><p>Tổng số lượng phân bổ</p><h3 th:text="${totalAllocatedQuantity}">0</h3></div></div></div>
+            </div>
 
-                                    <!-- MODAL SỬA -->
-                                    <div class="modal fade text-start" th:id="'editEquip-' + ${e.maTb}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form th:action="@{/admin/equipment/update}" method="post">
-                                                    <div class="modal-header"><h5>Sửa thiết bị</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                                    <div class="modal-body">
-                                                        <input type="hidden" name="maTb" th:value="${e.maTb}">
-                                                        <div class="mb-3"><label class="form-label">Tên thiết bị:</label><input type="text" name="tenTb" class="form-control" th:value="${e.tenTb}" required></div>
-                                                        <div class="mb-3"><label class="form-label">Loại thiết bị:</label><input type="text" name="loaiTb" class="form-control" th:value="${e.loaiTb}" required></div>
-                                                        <div class="mb-3"><label class="form-label">Vị trí:</label><input type="text" name="viTri" class="form-control" th:value="${e.viTri}" required></div>
-                                                        <div class="mb-3"><label class="form-label">Tình trạng:</label>
-                                                            <select name="tinhTrang" class="form-select">
-                                                                <option value="TOT" th:selected="${e.tinhTrang == 'TOT'}">Tốt / Trống</option>
-                                                                <option value="DANG_DUNG" th:selected="${e.tinhTrang == 'DANG_DUNG'}">Đang sử dụng</option>
-                                                                <option value="HONG" th:selected="${e.tinhTrang == 'HONG'}">Hỏng / Cần sửa</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer"><button type="submit" class="btn btn-primary">Lưu</button></div>
-                                                </form>
-                                            </div>
+            <div class="dashboard-card">
+                <div class="card-header px-3 pt-3 pb-0">
+                    <ul class="nav nav-tabs equipment-tabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#room-allocation" type="button"><i class="bi bi-door-open me-1"></i> Phân bổ theo phòng</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#equipment-catalog" type="button"><i class="bi bi-box-seam me-1"></i> Kho thiết bị chung</button></li>
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active p-3" id="room-allocation">
+                        <div class="filter-panel p-3 mb-4">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-3 col-md-6">
+                                    <label class="form-label fw-semibold">Tòa nhà</label>
+                                    <select id="buildingFilter" class="form-select">
+                                        <option value="">Tất cả tòa nhà</option>
+                                        <option th:each="building : ${buildings}" th:value="${building.maToaNha}" th:text="${building.tenToaNha}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-2 col-md-6">
+                                    <label class="form-label fw-semibold">Tầng</label>
+                                    <select id="floorFilter" class="form-select"><option value="">Tất cả tầng</option></select>
+                                </div>
+                                <div class="col-lg-4 col-md-7">
+                                    <label class="form-label fw-semibold">Phòng học</label>
+                                    <select id="roomFilter" class="form-select">
+                                        <option value="">Chọn phòng để xem thiết bị</option>
+                                        <option th:each="room : ${rooms}"
+                                                th:value="${room.maPhong}"
+                                                th:text="${room.maPhong + ' - ' + room.tenPhong}"
+                                                th:attr="data-building=${room.building != null ? room.building.maToaNha : ''},data-building-name=${room.building != null ? room.building.tenToaNha : ''},data-floor=${room.tang != null ? room.tang : ''}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-5 equipment-actions">
+                                    <button id="openAllocationModal" class="btn btn-primary w-100" type="button" data-bs-toggle="modal" data-bs-target="#allocationModal" disabled>
+                                        <i class="bi bi-plus-lg me-1"></i> Phân bổ thiết bị
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="roomPrompt" class="text-center text-muted py-5">
+                            <i class="bi bi-building-check fs-1 d-block mb-2"></i>
+                            Chọn tòa nhà, tầng và phòng để quản lý thiết bị.
+                        </div>
+
+                        <div id="selectedRoomPanel" class="d-none">
+                            <div class="room-summary d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                                <div><h5 id="selectedRoomName" class="mb-1"></h5><span id="selectedRoomLocation" class="text-muted small"></span></div>
+                                <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2"><span id="visibleAllocationCount">0</span> loại thiết bị</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0">
+                                    <thead><tr><th>Thiết bị</th><th style="width: 220px;">Số lượng</th><th class="text-end">Thao tác</th></tr></thead>
+                                    <tbody id="allocationTableBody">
+                                    <tr class="allocation-row" th:each="item : ${allocations}" th:attr="data-room=${item.room.maPhong}">
+                                        <td><strong th:text="${item.equipment.tenThietBi}">Máy chiếu</strong><br><small class="text-muted" th:text="'Mã thiết bị: ' + ${item.equipment.id}">Mã thiết bị</small></td>
+                                        <td>
+                                            <form th:action="@{/admin/equipment/allocation/save}" method="post" class="d-flex gap-2">
+                                                <input type="hidden" name="maPhong" th:value="${item.room.maPhong}">
+                                                <input type="hidden" name="thietBiId" th:value="${item.equipment.id}">
+                                                <input type="number" name="soLuong" class="form-control form-control-sm" min="1" th:value="${item.soLuong}" required>
+                                                <button class="btn btn-sm btn-outline-primary" title="Lưu số lượng"><i class="bi bi-check-lg"></i></button>
+                                            </form>
+                                        </td>
+                                        <td class="text-end">
+                                            <form th:action="@{/admin/equipment/allocation/delete}" method="post" class="d-inline" onsubmit="return confirm('Gỡ thiết bị này khỏi phòng?');">
+                                                <input type="hidden" name="maPhong" th:value="${item.room.maPhong}">
+                                                <input type="hidden" name="thietBiId" th:value="${item.equipment.id}">
+                                                <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash3 me-1"></i> Gỡ</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr id="allocationEmpty" class="allocation-empty"><td colspan="3" class="text-center text-muted py-4">Phòng này chưa được phân bổ thiết bị.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade p-3" id="equipment-catalog">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                            <div><h5 class="mb-1">Kho thiết bị chung</h5><span class="text-muted small">Thiết bị trong kho có thể được phân bổ cho nhiều phòng học.</span></div>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#catalogCreateModal"><i class="bi bi-plus-lg me-1"></i> Thêm thiết bị</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead><tr><th>ID</th><th>Tên thiết bị</th><th class="text-end">Thao tác</th></tr></thead>
+                                <tbody>
+                                <tr th:if="${#lists.isEmpty(equipments)}"><td colspan="3" class="text-center text-muted py-4">Kho chung chưa có thiết bị.</td></tr>
+                                <tr th:each="equipment : ${equipments}">
+                                    <td><strong class="text-primary" th:text="${equipment.id}">1</strong></td>
+                                    <td th:text="${equipment.tenThietBi}">Máy chiếu</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-light text-warning me-1" data-bs-toggle="modal" th:data-bs-target="'#catalogEdit-' + ${equipment.id}"><i class="bi bi-pencil-square"></i></button>
+                                        <form th:action="@{/admin/equipment/catalog/delete}" method="post" class="d-inline" onsubmit="return confirm('Xóa thiết bị khỏi kho chung?');">
+                                            <input type="hidden" name="id" th:value="${equipment.id}">
+                                            <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash3"></i></button>
+                                        </form>
+
+                                        <div class="modal fade text-start" th:id="'catalogEdit-' + ${equipment.id}" tabindex="-1">
+                                            <div class="modal-dialog"><div class="modal-content"><form th:action="@{/admin/equipment/catalog/update}" method="post">
+                                                <div class="modal-header"><h5 class="modal-title">Sửa thiết bị</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                                <div class="modal-body"><input type="hidden" name="id" th:value="${equipment.id}"><label class="form-label">Tên thiết bị</label><input name="tenThietBi" class="form-control" maxlength="100" th:value="${equipment.tenThietBi}" required></div>
+                                                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary">Lưu thay đổi</button></div>
+                                            </form></div></div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 </div>
 
-<!-- MODAL THÊM -->
-<div class="modal fade" id="modalAddEquip" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form th:action="@{/admin/equipment/create}" method="post">
-                <div class="modal-header"><h5>Thêm thiết bị mới</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div class="mb-3"><label class="form-label">Mã Thiết Bị:</label><input type="text" name="maTb" class="form-control" placeholder="Ví dụ: TB06" required></div>
-                    <div class="mb-3"><label class="form-label">Tên Thiết Bị:</label><input type="text" name="tenTb" class="form-control" placeholder="Ví dụ: Loa hội trường" required></div>
-                    <div class="mb-3"><label class="form-label">Loại Thiết Bị:</label><input type="text" name="loaiTb" class="form-control" placeholder="Trình chiếu, Âm thanh, Mạng..." required></div>
-                    <div class="mb-3"><label class="form-label">Vị trí phòng đặt:</label><input type="text" name="viTri" class="form-control" placeholder="Ví dụ: P401 - Polyco" required></div>
-                    <div class="mb-3"><label class="form-label">Số lượng:</label><input type="number" name="soLuong" class="form-control" value="1" required></div>
-                </div>
-                <div class="modal-footer"><button type="submit" class="btn btn-primary">Xác nhận</button></div>
-            </form>
-        </div>
-    </div>
+<div class="modal fade" id="catalogCreateModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content"><form th:action="@{/admin/equipment/catalog/create}" method="post">
+        <div class="modal-header"><h5 class="modal-title">Thêm vào kho thiết bị chung</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><label class="form-label">Tên thiết bị</label><input name="tenThietBi" class="form-control" maxlength="100" placeholder="Ví dụ: Máy chiếu" required></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary">Thêm thiết bị</button></div>
+    </form></div></div>
 </div>
+
+<div class="modal fade" id="allocationModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content"><form th:action="@{/admin/equipment/allocation/save}" method="post">
+        <div class="modal-header"><h5 class="modal-title">Phân bổ thiết bị cho phòng</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <div class="mb-3"><label class="form-label">Phòng học</label><input id="allocationRoomDisplay" class="form-control" readonly><input id="allocationRoomCode" type="hidden" name="maPhong"></div>
+            <div class="mb-3"><label class="form-label">Thiết bị từ kho chung</label><select name="thietBiId" class="form-select" required><option value="">Chọn thiết bị</option><option th:each="equipment : ${equipments}" th:value="${equipment.id}" th:text="${equipment.tenThietBi}"></option></select></div>
+            <div><label class="form-label">Số lượng phân bổ</label><input type="number" name="soLuong" class="form-control" min="1" value="1" required><div class="form-text">Nếu thiết bị đã có trong phòng, số lượng hiện tại sẽ được cập nhật.</div></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary">Lưu phân bổ</button></div>
+    </form></div></div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+    const buildingFilter = document.getElementById('buildingFilter');
+    const floorFilter = document.getElementById('floorFilter');
+    const roomFilter = document.getElementById('roomFilter');
+    const roomOptions = Array.from(roomFilter.querySelectorAll('option[data-building]')).map(option => ({
+        value: option.value,
+        label: option.textContent,
+        building: option.dataset.building,
+        buildingName: option.dataset.buildingName,
+        floor: option.dataset.floor
+    }));
+
+    function replaceOptions(select, firstLabel, options) {
+        select.innerHTML = '';
+        select.add(new Option(firstLabel, ''));
+        options.forEach(item => {
+            const option = new Option(item.label, item.value);
+            Object.entries(item.data || {}).forEach(([key, value]) => option.dataset[key] = value);
+            select.add(option);
+        });
+    }
+
+    function refreshFloors(preferredFloor = '') {
+        const building = buildingFilter.value;
+        const floors = [...new Set(roomOptions.filter(room => !building || room.building === building).map(room => room.floor).filter(Boolean))]
+            .sort((a, b) => Number(a) - Number(b));
+        replaceOptions(floorFilter, 'Tất cả tầng', floors.map(floor => ({ value: floor, label: `Tầng ${floor}` })));
+        floorFilter.value = floors.includes(preferredFloor) ? preferredFloor : '';
+    }
+
+    function refreshRooms(preferredRoom = '') {
+        const building = buildingFilter.value;
+        const floor = floorFilter.value;
+        const filteredRooms = roomOptions.filter(room => (!building || room.building === building) && (!floor || room.floor === floor));
+        replaceOptions(roomFilter, 'Chọn phòng để xem thiết bị', filteredRooms.map(room => ({
+            value: room.value,
+            label: room.label,
+            data: { building: room.building, buildingName: room.buildingName, floor: room.floor }
+        })));
+        roomFilter.value = filteredRooms.some(room => room.value === preferredRoom) ? preferredRoom : '';
+        showSelectedRoom();
+    }
+
+    function showSelectedRoom() {
+        const selectedCode = roomFilter.value;
+        const selectedRoom = roomOptions.find(room => room.value === selectedCode);
+        const rows = document.querySelectorAll('.allocation-row');
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const visible = Boolean(selectedCode) && row.dataset.room === selectedCode;
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        document.getElementById('roomPrompt').classList.toggle('d-none', Boolean(selectedRoom));
+        document.getElementById('selectedRoomPanel').classList.toggle('d-none', !selectedRoom);
+        document.getElementById('openAllocationModal').disabled = !selectedRoom;
+        document.getElementById('allocationEmpty').style.display = selectedRoom && visibleCount === 0 ? '' : 'none';
+        document.getElementById('visibleAllocationCount').textContent = visibleCount;
+
+        if (selectedRoom) {
+            document.getElementById('selectedRoomName').textContent = selectedRoom.label;
+            document.getElementById('selectedRoomLocation').textContent = `${selectedRoom.buildingName || 'Chưa xác định tòa'}${selectedRoom.floor ? ` · Tầng ${selectedRoom.floor}` : ''}`;
+            document.getElementById('allocationRoomCode').value = selectedRoom.value;
+            document.getElementById('allocationRoomDisplay').value = selectedRoom.label;
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', selectedRoom.value);
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    buildingFilter.addEventListener('change', () => { refreshFloors(); refreshRooms(); });
+    floorFilter.addEventListener('change', () => refreshRooms());
+    roomFilter.addEventListener('change', showSelectedRoom);
+
+    const requestedRoom = new URLSearchParams(window.location.search).get('room') || '';
+    const initialRoom = roomOptions.find(room => room.value === requestedRoom);
+    if (initialRoom) {
+        buildingFilter.value = initialRoom.building;
+        refreshFloors(initialRoom.floor);
+        refreshRooms(initialRoom.value);
+    } else {
+        refreshFloors();
+        refreshRooms();
+    }
+</script>
 </body>
 </html>

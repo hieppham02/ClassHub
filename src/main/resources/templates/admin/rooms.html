@@ -68,6 +68,7 @@
             </ul>
 
             <div class="sidebar-bottom">
+                <a th:href="@{/}" target="_blank" rel="noopener noreferrer"><i class="bi bi-house-door"></i> Mở trang chủ</a>
                 <a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
             </div>
         </aside>
@@ -170,6 +171,34 @@
                                 </button>
                             </div>
 
+                            <form method="get" th:action="@{/admin/rooms}" class="row g-3 align-items-end px-3 py-3 border-bottom bg-light-subtle">
+                                <div class="col-lg-4 col-md-5">
+                                    <label for="buildingFilter" class="form-label small fw-semibold mb-1">Lọc theo tòa nhà</label>
+                                    <select id="buildingFilter" name="toaNha" class="form-select">
+                                        <option value="">Tất cả tòa nhà</option>
+                                        <option th:each="building : ${buildings}"
+                                                th:value="${building.maToaNha}"
+                                                th:text="${building.tenToaNha + ' (' + building.maToaNha + ')'}"
+                                                th:selected="${building.maToaNha == selectedBuilding}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-4">
+                                    <label for="floorFilter" class="form-label small fw-semibold mb-1">Lọc theo tầng</label>
+                                    <select id="floorFilter" name="tang" class="form-select">
+                                        <option value="">Tất cả tầng</option>
+                                        <option th:each="floor : ${floors}"
+                                                th:value="${floor}"
+                                                th:text="${'Tầng ' + floor}"
+                                                th:selected="${selectedFloor != null && selectedFloor == floor}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-5 col-md-3 d-flex align-items-center gap-2">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i> Lọc</button>
+                                    <a th:href="@{/admin/rooms}" class="btn btn-outline-secondary">Đặt lại</a>
+                                    <span class="text-muted small ms-auto" th:text="${filteredRoomCount + '/' + totalRooms + ' phòng'}"></span>
+                                </div>
+                            </form>
+
                             <div class="table-responsive">
                                 <table class="table align-middle">
                                     <thead>
@@ -177,6 +206,7 @@
                                             <th>Mã Phòng</th>
                                             <th>Tên Phòng</th>
                                             <th>Tòa Nhà</th>
+                                            <th>Tầng</th>
                                             <th>Sức Chứa</th>
                                             <th>Trạng Thái</th>
                                             <th class="text-center">Thao Tác</th>
@@ -184,7 +214,7 @@
                                     </thead>
                                     <tbody>
                                         <tr th:if="${#lists.isEmpty(rooms)}">
-                                            <td colspan="6" class="text-center py-4 text-muted">Chưa có phòng học nào.</td>
+                                            <td colspan="7" class="text-center py-4 text-muted">Không có phòng học phù hợp với bộ lọc.</td>
                                         </tr>
                                         <tr th:each="r : ${rooms}">
                                             <td>
@@ -194,19 +224,22 @@
                                                 <strong th:text="${r.tenPhong}">Phòng học 401</strong>
                                             </td>
                                             <td>
-                                                <span class="badge bg-light text-dark border fw-bold" th:text="${r.building != null ? r.building.tenToaNha : 'Polyco'}">Polyco</span>
+                                                <span class="badge bg-light text-dark border fw-bold" th:text="${r.building != null ? r.building.tenToaNha : 'Chưa xác định'}">Tòa nhà</span>
+                                            </td>
+                                            <td>
+                                                <span th:text="${r.tang != null ? 'Tầng ' + r.tang : '-'}">-</span>
                                             </td>
                                             <td>
                                                 <span th:text="${r.sucChua != null ? r.sucChua + ' chỗ' : '50 chỗ'}">50 chỗ</span>
                                             </td>
                                             <td>
-                                                <span th:if="${r.trangThai == 'KHA_DUNG'}" class="badge-status status-trong">
+                                                <span th:if="${r.trangThai == '0' || r.trangThai == 'KHA_DUNG' || r.trangThai == 'HOAT_DONG'}" class="badge-status status-trong">
                                                     <i class="bi bi-check-circle"></i> Sẵn sàng
                                                 </span>
-                                                <span th:if="${r.trangThai == 'DANG_DUNG'}" class="badge-status status-dang-dung">
+                                                <span th:if="${r.trangThai == '1' || r.trangThai == 'DANG_DUNG'}" class="badge-status status-dang-dung">
                                                     <i class="bi bi-clock"></i> Đang dùng
                                                 </span>
-                                                <span th:if="${r.trangThai == 'BAO_TRI'}" class="badge-status status-bao-tri">
+                                                <span th:if="${r.trangThai == '2' || r.trangThai == 'BAO_TRI'}" class="badge-status status-bao-tri">
                                                     <i class="bi bi-tools"></i> Bảo trì
                                                 </span>
                                             </td>
@@ -249,10 +282,10 @@
                                                                         <div class="col-md-6 mb-3">
                                                                             <label class="form-label">Tòa Nhà:</label>
                                                                             <select name="toaNha" class="form-select">
-                                                                                <option value="Polyco" th:selected="${r.building != null && r.building.tenToaNha == 'Polyco'}">Polyco</option>
-                                                                                <option value="Đinh Trọng Dật" th:selected="${r.building != null && r.building.tenToaNha == 'Đinh Trọng Dật'}">Đinh Trọng Dật</option>
-                                                                                <option value="EAUT" th:selected="${r.building != null && r.building.tenToaNha == 'EAUT'}">EAUT</option>
-                                                                                <option value="VIỆT NAM " th:selected="${r.building != null && r.building.tenToaNha == 'VIỆT NAM '}">VIỆT NAM </option>
+                                                                                <option th:each="building : ${buildings}"
+                                                                                        th:value="${building.maToaNha}"
+                                                                                        th:text="${building.tenToaNha}"
+                                                                                        th:selected="${r.building != null && r.building.maToaNha == building.maToaNha}"></option>
                                                                             </select>
                                                                         </div>
                                                                         <div class="col-md-6 mb-3">
@@ -264,9 +297,9 @@
                                                                     <div class="mb-3">
                                                                         <label class="form-label">Trạng thái:</label>
                                                                         <select name="trangThai" class="form-select">
-                                                                            <option value="KHA_DUNG" th:selected="${r.trangThai == 'KHA_DUNG'}">Sẵn sàng (Trống)</option>
-                                                                            <option value="DANG_DUNG" th:selected="${r.trangThai == 'DANG_DUNG'}">Đang sử dụng</option>
-                                                                            <option value="BAO_TRI" th:selected="${r.trangThai == 'BAO_TRI'}">Bảo trì</option>
+                                                                            <option value="0" th:selected="${r.trangThai == '0' || r.trangThai == 'KHA_DUNG' || r.trangThai == 'HOAT_DONG'}">Sẵn sàng (Trống)</option>
+                                                                            <option value="1" th:selected="${r.trangThai == '1' || r.trangThai == 'DANG_DUNG'}">Đang sử dụng</option>
+                                                                            <option value="2" th:selected="${r.trangThai == '2' || r.trangThai == 'BAO_TRI'}">Bảo trì</option>
                                                                         </select>
                                                                     </div>
                                                                 </div>
@@ -316,12 +349,11 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Thuộc Tòa Nhà:</label>
-                                <select name="toaNha" class="form-select">
-                                    <option value="Polyco">Polyco</option>
-                                    <option value="Đinh Trọng Dật">Đinh Trọng Dật</option>
-                                    <option value="EAUT">EAUT</option>
-                                    <option value="VIỆT NAM ">VIỆT NAM </option>
-                                    <option value="Thuận Thành">Thuận Thành</option>
+                                <select name="toaNha" class="form-select" required>
+                                    <option value="" selected disabled>Chọn tòa nhà</option>
+                                    <option th:each="building : ${buildings}"
+                                            th:value="${building.maToaNha}"
+                                            th:text="${building.tenToaNha + ' (' + building.maToaNha + ')'}"></option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -333,9 +365,9 @@
                         <div class="mb-3">
                             <label class="form-label">Trạng thái:</label>
                             <select name="trangThai" class="form-select">
-                                <option value="KHA_DUNG">Sẵn sàng (Trống)</option>
-                                <option value="DANG_DUNG">Đang sử dụng</option>
-                                <option value="BAO_TRI">Bảo trì</option>
+                                <option value="0">Sẵn sàng (Trống)</option>
+                                <option value="1">Đang sử dụng</option>
+                                <option value="2">Bảo trì</option>
                             </select>
                         </div>
                     </div>

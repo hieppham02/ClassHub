@@ -10,6 +10,8 @@ import vn.edu.eaut.ems.repository.RoomRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Controller
 public class AdminReportController {
@@ -22,30 +24,32 @@ public class AdminReportController {
         this.roomRepository = roomRepository;
     }
 
-    // DTO chứa thông tin phòng trống
-    public static class FreeRoomDto {
+    public static class VacantRoomDto {
         private String maPhong;
         private String tenPhong;
         private String toaNha;
         private int sucChua;
-        private String soCaTrong;
-        private String trangThaiText;
+        private int bookedCount;
+        private String vacancyRate;
+        private String statusText;
 
-        public FreeRoomDto(String maPhong, String tenPhong, String toaNha, int sucChua, String soCaTrong, String trangThaiText) {
+        public VacantRoomDto(String maPhong, String tenPhong, String toaNha, int sucChua, int bookedCount, String vacancyRate, String statusText) {
             this.maPhong = maPhong;
             this.tenPhong = tenPhong;
             this.toaNha = toaNha;
             this.sucChua = sucChua;
-            this.soCaTrong = soCaTrong;
-            this.trangThaiText = trangThaiText;
+            this.bookedCount = bookedCount;
+            this.vacancyRate = vacancyRate;
+            this.statusText = statusText;
         }
 
         public String getMaPhong() { return maPhong; }
         public String getTenPhong() { return tenPhong; }
         public String getToaNha() { return toaNha; }
         public int getSucChua() { return sucChua; }
-        public String getSoCaTrong() { return soCaTrong; }
-        public String getTrangThaiText() { return trangThaiText; }
+        public int getBookedCount() { return bookedCount; }
+        public String getVacancyRate() { return vacancyRate; }
+        public String getStatusText() { return statusText; }
     }
 
     // Nhận diện chuẩn xác tên tòa nhà từ mã phòng
@@ -61,10 +65,10 @@ public class AdminReportController {
 
     @GetMapping("/admin/reports")
     public String getReports(Model model) {
-        // 1. TÍNH TOÁN CÁC CHỈ SỐ KPI ĐƠN MƯỢN
         List<Booking> bookings = bookingRepository.findAll();
         long totalBookings = bookings.size();
 
+        // 1. TÍNH TOÁN CÁC CHỈ SỐ KPI
         long activeBookings = bookings.stream()
                 .filter(b -> "DA_DUYET".equalsIgnoreCase(b.getTrangThai()) || "UY_QUYEN".equalsIgnoreCase(b.getTrangThai())).count();
         long completedBookings = bookings.stream()
@@ -81,7 +85,7 @@ public class AdminReportController {
         model.addAttribute("completedBookings", completedBookings);
         model.addAttribute("approvalRate", approvalRate);
 
-        // 2. BIỂU ĐỒ CỘT: TẦN SUẤT MƯỢN THEO 5 CA HỌC
+        // 2. BIỂU ĐỒ CỘT: THEO 5 CA HỌC
         List<Long> caData = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             final int ca = i;
@@ -90,8 +94,28 @@ public class AdminReportController {
         }
         model.addAttribute("chartCaData", caData);
 
+        // Biểu đồ lượt mượn theo ngày: nạp sẵn 30 ngày để lọc nhanh 7/14/30 ngày.
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+        Map<LocalDate, Long> dailyBookingCounts = bookings.stream()
+                .filter(b -> b.getNgayMuon() != null)
+                .filter(b -> !"TU_CHOI".equalsIgnoreCase(b.getTrangThai()))
+                .filter(b -> !b.getNgayMuon().isBefore(startDate) && !b.getNgayMuon().isAfter(endDate))
+                .collect(Collectors.groupingBy(Booking::getNgayMuon, Collectors.counting()));
+
+        DateTimeFormatter chartDateFormatter = DateTimeFormatter.ofPattern("dd/MM");
+        List<String> dailyLabels = new ArrayList<>();
+        List<Long> dailyData = new ArrayList<>();
+        for (int dayOffset = 0; dayOffset < 30; dayOffset++) {
+            LocalDate date = startDate.plusDays(dayOffset);
+            dailyLabels.add(date.format(chartDateFormatter));
+            dailyData.add(dailyBookingCounts.getOrDefault(date, 0L));
+        }
+        model.addAttribute("chartDailyLabels", dailyLabels);
+        model.addAttribute("chartDailyData", dailyData);
+
         // =========================================================================
-        // 3. [ĐÃ ĐỔI] BIỂU ĐỒ TRÒN: TỶ LỆ (%) SỐ LƯỢNG PHÒNG HỌC MỖI TÒA NHÀ CHIẾM
+        // 3. [BIỂU ĐỒ TRÒN] ĐẾM SỐ LƯỢNG PHÒNG HỌC THỰC TẾ TRONG CSDL ĐỂ TÍNH %
         // =========================================================================
         List<Room> allRooms = roomRepository.findAll();
 
@@ -101,7 +125,7 @@ public class AdminReportController {
         long countTtRooms = 0;
         long countVnbRooms = 0;
 
-        // Quét từng phòng học trong CSDL để đếm quy mô phòng của từng tòa nhà
+        // Quét từng phòng học thực tế trong bảng phong_hoc
         for (Room r : allRooms) {
             String bld = resolveBuildingName(r);
             switch (bld) {
@@ -119,30 +143,38 @@ public class AdminReportController {
         model.addAttribute("chartBuildingLabels", buildingLabels);
         model.addAttribute("chartBuildingData", buildingData);
 
-        // 4. DANH SÁCH TOP PHÒNG HỌC CÒN TRỐNG / SẴN SÀNG
-        Set<String> busyRoomCodes = bookings.stream()
-                .filter(b -> !"DA_TRA".equalsIgnoreCase(b.getTrangThai()) && !"TU_CHOI".equalsIgnoreCase(b.getTrangThai()))
+        // =========================================================================
+        // 4. BẢNG TOP PHÒNG TRỐNG NHIỀU NHẤT (SẮP XẾP TOP 1, 2, 3...)
+        // =========================================================================
+        Map<String, Long> roomBookingCounts = bookings.stream()
                 .filter(b -> b.getRoom() != null)
                 .map(b -> b.getRoom().getMaPhong().toUpperCase().replace("-", "").trim())
-                .collect(Collectors.toSet());
+                .collect(Collectors.groupingBy(code -> code, Collectors.counting()));
 
-        List<FreeRoomDto> freeRooms = allRooms.stream()
-                .filter(r -> !busyRoomCodes.contains(r.getMaPhong().toUpperCase().replace("-", "").trim()))
-                .limit(7)
+        List<VacantRoomDto> topFreeRooms = allRooms.stream()
                 .map(r -> {
+                    String cleanCode = r.getMaPhong().toUpperCase().replace("-", "").trim();
+                    int timesBooked = roomBookingCounts.getOrDefault(cleanCode, 0L).intValue();
                     String toa = resolveBuildingName(r);
-                    return new FreeRoomDto(
-                        r.getMaPhong(), 
-                        r.getTenPhong(), 
-                        toa, 
-                        r.getSucChua() != null ? r.getSucChua() : 70, 
-                        "5/5 ca trống", 
-                        "Sẵn sàng 100%"
+
+                    int vacancyPercent = Math.max(10, 100 - (timesBooked * 20));
+                    String statusText = (timesBooked == 0) ? "Trống 100% (Chưa ai mượn)" : ("Chỉ mượn " + timesBooked + " lần");
+
+                    return new VacantRoomDto(
+                        r.getMaPhong(),
+                        r.getTenPhong(),
+                        toa,
+                        r.getSucChua() != null ? r.getSucChua() : 70,
+                        timesBooked,
+                        vacancyPercent + "%",
+                        statusText
                     );
                 })
+                .sorted(Comparator.comparingInt(VacantRoomDto::getBookedCount))
+                .limit(300)
                 .collect(Collectors.toList());
 
-        model.addAttribute("freeRooms", freeRooms);
+        model.addAttribute("topFreeRooms", topFreeRooms);
 
         return "admin/reports";
     }

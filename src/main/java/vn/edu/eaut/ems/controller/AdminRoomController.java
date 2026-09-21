@@ -1,49 +1,69 @@
 package vn.edu.eaut.ems.controller;
 
-import jakarta.annotation.PostConstruct;
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import vn.edu.eaut.ems.entity.Building;
 import vn.edu.eaut.ems.entity.Room;
-
-import java.util.ArrayList;
-import java.util.List;
+import vn.edu.eaut.ems.repository.BuildingRepository;
+import vn.edu.eaut.ems.repository.RoomRepository;
 
 @Controller
 public class AdminRoomController {
 
-    private final List<Room> roomList = new ArrayList<>();
+    private final RoomRepository roomRepository;
+    private final BuildingRepository buildingRepository;
 
-    // Helper tạo nhanh Room và Building
-    private Room createRoom(String maPhong, String tenPhong, Integer sucChua, String trangThai, String tenToaNha) {
-        Building b = new Building();
-        b.setTenToaNha(tenToaNha);
-        return new Room(maPhong, tenPhong, sucChua, trangThai, b);
+    public AdminRoomController(RoomRepository roomRepository, BuildingRepository buildingRepository) {
+        this.roomRepository = roomRepository;
+        this.buildingRepository = buildingRepository;
     }
 
-    // Khởi tạo danh sách phòng mẫu với các tòa nhà mới
-    @PostConstruct
-    public void initMockData() {
-        roomList.add(createRoom("P401", "Phòng học 401", 50, "KHA_DUNG", "Polyco"));
-        roomList.add(createRoom("P402", "Phòng học 402", 50, "DANG_DUNG", "Polyco"));
-        roomList.add(createRoom("LAB302", "Lab AI & IoT", 40, "DANG_DUNG", "Đinh Trọng Dật"));
-        roomList.add(createRoom("LAB301", "Phòng Máy Tính 1", 45, "KHA_DUNG", "Thuận Thành"));
-        roomList.add(createRoom("HT01", "Hội Trường Lớn", 300, "KHA_DUNG", "EAUT"));
-        roomList.add(createRoom("XTH01", "Xưởng Thực Hành 1", 60, "BAO_TRI", "VIỆT NAM "));
-    }
-
-    // 1. HIỂN THỊ DANH SÁCH & THỐNG KÊ
     @GetMapping("/admin/rooms")
-    public String getRoomManagement(Model model) {
-        long totalRooms = roomList.size();
-        long availableRooms = roomList.stream().filter(r -> "KHA_DUNG".equalsIgnoreCase(r.getTrangThai())).count();
-        long occupiedRooms = roomList.stream().filter(r -> "DANG_DUNG".equalsIgnoreCase(r.getTrangThai())).count();
-        long maintenanceRooms = roomList.stream().filter(r -> "BAO_TRI".equalsIgnoreCase(r.getTrangThai())).count();
+    public String getRoomManagement(
+            @RequestParam(value = "toaNha", required = false) String toaNha,
+            @RequestParam(value = "tang", required = false) Integer tang,
+            Model model) {
 
-        model.addAttribute("rooms", roomList);
-        model.addAttribute("totalRooms", totalRooms);
+        List<Room> allRooms = roomRepository.findAll(
+                Sort.by("building.maToaNha").ascending().and(Sort.by("maPhong").ascending()));
+
+        List<Integer> floors = allRooms.stream()
+                .map(Room::getTang)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+
+        List<Room> filteredRooms = allRooms.stream()
+                .filter(room -> toaNha == null || toaNha.isBlank()
+                        || (room.getBuilding() != null
+                                && toaNha.equalsIgnoreCase(room.getBuilding().getMaToaNha())))
+                .filter(room -> tang == null || tang.equals(room.getTang()))
+                .toList();
+
+        long availableRooms = allRooms.stream().filter(this::isAvailable).count();
+        long occupiedRooms = allRooms.stream().filter(this::isOccupied).count();
+        long maintenanceRooms = allRooms.stream().filter(this::isMaintenance).count();
+
+        List<Building> buildings = buildingRepository.findAll(Sort.by("maToaNha").ascending());
+
+        model.addAttribute("rooms", filteredRooms);
+        model.addAttribute("buildings", buildings);
+        model.addAttribute("floors", floors);
+        model.addAttribute("selectedBuilding", toaNha == null ? "" : toaNha);
+        model.addAttribute("selectedFloor", tang);
+        model.addAttribute("filteredRoomCount", filteredRooms.size());
+        model.addAttribute("totalRooms", allRooms.size());
         model.addAttribute("availableRooms", availableRooms);
         model.addAttribute("occupiedRooms", occupiedRooms);
         model.addAttribute("maintenanceRooms", maintenanceRooms);
@@ -51,63 +71,97 @@ public class AdminRoomController {
         return "admin/rooms";
     }
 
-    // 2. THÊM MỚI PHÒNG HỌC
     @PostMapping("/admin/rooms/create")
     public String createRoom(@RequestParam("maPhong") String maPhong,
-                             @RequestParam("tenPhong") String tenPhong,
-                             @RequestParam("sucChua") Integer sucChua,
-                             @RequestParam("toaNha") String toaNha,
-                             @RequestParam(value = "trangThai", defaultValue = "KHA_DUNG") String trangThai,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam("tenPhong") String tenPhong,
+            @RequestParam("sucChua") Integer sucChua,
+            @RequestParam("toaNha") String toaNha,
+            @RequestParam(value = "trangThai", defaultValue = "0") String trangThai,
+            RedirectAttributes redirectAttributes) {
 
-        boolean exists = roomList.stream().anyMatch(r -> r.getMaPhong().equalsIgnoreCase(maPhong.trim()));
-        if (exists) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Mã phòng [" + maPhong + "] đã tồn tại!");
+        String normalizedCode = maPhong.trim().toUpperCase();
+        if (roomRepository.existsById(normalizedCode)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Mã phòng [" + normalizedCode + "] đã tồn tại!");
             return "redirect:/admin/rooms";
         }
 
-        Room newRoom = createRoom(maPhong.trim(), tenPhong, sucChua, trangThai, toaNha);
-        roomList.add(0, newRoom);
+        Building building = buildingRepository.findById(toaNha).orElse(null);
+        if (building == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Tòa nhà được chọn không tồn tại!");
+            return "redirect:/admin/rooms";
+        }
 
-        redirectAttributes.addFlashAttribute("successMessage", "Thêm mới phòng học [" + maPhong + "] tại tòa " + toaNha + " thành công!");
+        roomRepository.save(new Room(normalizedCode, tenPhong.trim(), sucChua, trangThai, building));
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Thêm phòng học [" + normalizedCode + "] thành công!");
         return "redirect:/admin/rooms";
     }
 
-    // 3. CHỈNH SỬA PHÒNG HỌC
     @PostMapping("/admin/rooms/update")
     public String updateRoom(@RequestParam("maPhong") String maPhong,
-                             @RequestParam("tenPhong") String tenPhong,
-                             @RequestParam("sucChua") Integer sucChua,
-                             @RequestParam("toaNha") String toaNha,
-                             @RequestParam("trangThai") String trangThai,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam("tenPhong") String tenPhong,
+            @RequestParam("sucChua") Integer sucChua,
+            @RequestParam("toaNha") String toaNha,
+            @RequestParam("trangThai") String trangThai,
+            RedirectAttributes redirectAttributes) {
 
-        for (Room r : roomList) {
-            if (r.getMaPhong().equalsIgnoreCase(maPhong)) {
-                r.setTenPhong(tenPhong);
-                r.setSucChua(sucChua);
-                r.setTrangThai(trangThai);
-                if (r.getBuilding() == null) {
-                    r.setBuilding(new Building());
-                }
-                r.getBuilding().setTenToaNha(toaNha);
-                break;
-            }
+        Room room = roomRepository.findById(maPhong).orElse(null);
+        Building building = buildingRepository.findById(toaNha).orElse(null);
+        if (room == null || building == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy phòng hoặc tòa nhà cần cập nhật!");
+            return "redirect:/admin/rooms";
         }
+
+        room.setTenPhong(tenPhong.trim());
+        room.setSucChua(sucChua);
+        room.setTrangThai(trangThai);
+        room.setBuilding(building);
+        roomRepository.save(room);
 
         redirectAttributes.addFlashAttribute("successMessage", "Cập nhật phòng [" + maPhong + "] thành công!");
         return "redirect:/admin/rooms";
     }
 
-    // 4. XÓA PHÒNG HỌC
     @PostMapping("/admin/rooms/delete")
     public String deleteRoom(@RequestParam("maPhong") String maPhong, RedirectAttributes redirectAttributes) {
-        boolean removed = roomList.removeIf(r -> r.getMaPhong().equalsIgnoreCase(maPhong));
-        if (removed) {
-            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa phòng [" + maPhong + "] thành công!");
-        } else {
+        if (!roomRepository.existsById(maPhong)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy phòng cần xóa!");
+            return "redirect:/admin/rooms";
+        }
+
+        try {
+            roomRepository.deleteById(maPhong);
+            roomRepository.flush();
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa phòng [" + maPhong + "] thành công!");
+        } catch (DataIntegrityViolationException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Không thể xóa phòng [" + maPhong + "] vì đang có dữ liệu mượn/trả liên quan.");
         }
         return "redirect:/admin/rooms";
+    }
+
+    private boolean isAvailable(Room room) {
+        return hasStatus(room, "0", "KHA_DUNG", "HOAT_DONG");
+    }
+
+    private boolean isOccupied(Room room) {
+        return hasStatus(room, "1", "DANG_DUNG");
+    }
+
+    private boolean isMaintenance(Room room) {
+        return hasStatus(room, "2", "BAO_TRI");
+    }
+
+    private boolean hasStatus(Room room, String... statuses) {
+        if (room.getTrangThai() == null) {
+            return false;
+        }
+        for (String status : statuses) {
+            if (status.equalsIgnoreCase(room.getTrangThai())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

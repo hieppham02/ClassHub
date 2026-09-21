@@ -59,6 +59,10 @@
             </ul>
 
             <div class="sidebar-bottom">
+                <a th:href="@{/}" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-house-door"></i>
+                    Mở trang chủ
+                </a>
                 <a th:href="@{/logout}">
                     <i class="bi bi-box-arrow-right"></i>
                     Đăng xuất
@@ -105,25 +109,10 @@
             <!-- CONTENT -->
             <section class="content">
 
-                <!-- 4 THẺ THỐNG KÊ DỮ LIỆU THẬT (ĐÃ BỎ DOANH THU) -->
-                <div class="row g-4 mb-4">
+                <!-- 5 chỉ số vận hành cần theo dõi -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-4 mb-4">
 
-                    <!-- THẺ 1: TỔNG PHÒNG HỌC -->
-                    <div class="col-xl-3 col-md-6">
-                        <div class="stat-card">
-                            <div class="stat-icon blue">
-                                <i class="bi bi-door-open-fill"></i>
-                            </div>
-                            <div>
-                                <p>Tổng phòng học</p>
-                                <h3 th:text="${totalRooms}">240</h3>
-                                <small class="text-primary"><i class="bi bi-buildings"></i> <span th:text="${totalBuildings}">5</span> Tòa nhà</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- THẺ 2: CHỜ PHÊ DUYỆT -->
-                    <div class="col-xl-3 col-md-6">
+                    <div class="col">
                         <div class="stat-card">
                             <div class="stat-icon orange">
                                 <i class="bi bi-hourglass-split"></i>
@@ -136,30 +125,56 @@
                         </div>
                     </div>
 
-                    <!-- THẺ 3: ĐANG MƯỢN PHÒNG -->
-                    <div class="col-xl-3 col-md-6">
+                    <div class="col">
                         <div class="stat-card">
                             <div class="stat-icon purple">
-                                <i class="bi bi-calendar-check-fill"></i>
+                                <i class="bi bi-door-open-fill"></i>
                             </div>
                             <div>
-                                <p>Đang sử dụng</p>
-                                <h3 th:text="${activeBookings}">0</h3>
-                                <small class="text-primary"><i class="bi bi-dot"></i> Đang mượn</small>
+                                <p>Phòng đang sử dụng</p>
+                                <h3 th:text="${activeRooms}">0</h3>
+                                <small class="text-primary"><i class="bi bi-activity"></i> Theo trạng thái phòng</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- THẺ 4: TỔNG THÀNH VIÊN (THAY CHO DOANH THU) -->
-                    <div class="col-xl-3 col-md-6">
+                    <div class="col">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="bi bi-calendar2-check-fill"></i>
+                            </div>
+                            <div>
+                                <p>Lượt mượn hôm nay</p>
+                                <h3 th:text="${todayBookings}">0</h3>
+                                <small class="text-primary"><i class="bi bi-calendar-date"></i> Theo ngày mượn</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="bi bi-tools"></i>
+                            </div>
+                            <div>
+                                <p>Phòng bảo trì</p>
+                                <h3 th:text="${maintenanceRooms}">0</h3>
+                                <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Tạm ngừng sử dụng</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
                         <div class="stat-card">
                             <div class="stat-icon green">
                                 <i class="bi bi-people-fill"></i>
                             </div>
                             <div>
-                                <p>Tổng thành viên</p>
+                                <p>Tài khoản hoạt động</p>
                                 <h3 th:text="${totalAccounts}">0</h3>
-                                <small class="text-success"><i class="bi bi-check2"></i> <span th:text="${totalStudents}">0</span> Sinh viên</small>
+                                <small class="text-success">
+                                    <span th:text="${totalStudents}">0</span> SV · <span th:text="${totalTeachers}">0</span> GV
+                                </small>
                             </div>
                         </div>
                     </div>

@@ -157,13 +157,16 @@ public class HomeController {
         booking.setRoom(room);
         booking.setNgayMuon(targetDate);
         booking.setCaMuon(targetCa);
-        booking.setTrangThai("CHO_DUYET");
+        boolean automaticallyApproved = AdminSettingController.autoApprove;
+        booking.setTrangThai(automaticallyApproved ? "DA_DUYET" : "CHO_DUYET");
 
         bookingRepository.save(booking);
 
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "message", "Đăng ký mượn phòng " + room.getTenPhong() + " thành công! Vui lòng chờ Admin duyệt."
+            "message", automaticallyApproved
+                    ? "Đăng ký mượn phòng " + room.getTenPhong() + " thành công và đã được tự động duyệt."
+                    : "Đăng ký mượn phòng " + room.getTenPhong() + " thành công! Vui lòng chờ Admin duyệt."
         ));
     }
 

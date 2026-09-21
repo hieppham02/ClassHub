@@ -57,4 +57,20 @@ public class Room {
 
     public Set<RoomEquipment> getEquipments() { return equipments; }
     public void setEquipments(Set<RoomEquipment> equipments) { this.equipments = equipments; }
+
+    @Transient
+    public Integer getTang() {
+        if (maPhong == null || building == null || building.getMaToaNha() == null) {
+            return null;
+        }
+
+        String buildingCode = building.getMaToaNha();
+        if (!maPhong.regionMatches(true, 0, buildingCode, 0, buildingCode.length())
+                || maPhong.length() <= buildingCode.length()) {
+            return null;
+        }
+
+        char floorCharacter = maPhong.charAt(buildingCode.length());
+        return Character.isDigit(floorCharacter) ? Character.getNumericValue(floorCharacter) : null;
+    }
 }

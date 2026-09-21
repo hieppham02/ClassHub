@@ -23,7 +23,10 @@
             <li><a th:href="@{/admin/reports}"><i class="bi bi-bar-chart-fill"></i><span>Báo cáo thống kê</span></a></li>
             <li><a th:href="@{/admin/settings}"><i class="bi bi-gear-fill"></i><span>Cài đặt</span></a></li>
         </ul>
-        <div class="sidebar-bottom"><a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></div>
+        <div class="sidebar-bottom">
+            <a th:href="@{/}" target="_blank" rel="noopener noreferrer"><i class="bi bi-house-door"></i> Mở trang chủ</a>
+            <a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+        </div>
     </aside>
 
     <main class="main-content">

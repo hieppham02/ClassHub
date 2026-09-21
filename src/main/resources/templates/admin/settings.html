@@ -18,6 +18,7 @@
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             margin-bottom: 24px;
+            height: 100%;
         }
         .settings-header {
             display: flex;
@@ -39,6 +40,28 @@
         .icon-blue { background: #dbeafe; color: #2563eb; }
         .icon-purple { background: #ede9fe; color: #7c3aed; }
         .icon-orange { background: #ffedd5; color: #ea580c; }
+        .settings-flow {
+            display: flex;
+            flex-flow: row nowrap;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 14px;
+            scroll-snap-type: x proximity;
+        }
+        .settings-flow-item {
+            flex: 0 0 min(390px, 86vw);
+            scroll-snap-align: start;
+        }
+        .readonly-value {
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+            padding: .375rem .75rem;
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: .375rem;
+        }
     </style>
 </head>
 
@@ -68,6 +91,7 @@
             </ul>
 
             <div class="sidebar-bottom">
+                <a th:href="@{/}" target="_blank" rel="noopener noreferrer"><i class="bi bi-house-door"></i> Mở trang chủ</a>
                 <a th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
             </div>
         </aside>
@@ -107,9 +131,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
 
-                <div class="row">
+                <div class="settings-flow">
                     <!-- 1. CÀI ĐẶT CHUNG HỆ THỐNG -->
-                    <div class="col-lg-6">
+                    <div class="settings-flow-item">
                         <div class="settings-card">
                             <div class="settings-header">
                                 <div class="settings-icon icon-blue">
@@ -117,31 +141,26 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0">Thông tin chung</h5>
-                                    <small class="text-muted">Cấu hình hiển thị trang web và liên hệ</small>
+                                    <small class="text-muted">Thông tin cố định của hệ thống</small>
                                 </div>
                             </div>
-                            <form th:action="@{/admin/settings/general}" method="post">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">TÊN HỆ THỐNG</label>
-                                    <input type="text" name="systemName" class="form-control" th:value="${systemName}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">EMAIL HỖ TRỢ KỸ THUẬT</label>
-                                    <input type="email" name="contactEmail" class="form-control" th:value="${contactEmail}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">HOTLINE HỖ TRỢ</label>
-                                    <input type="text" name="hotline" class="form-control" th:value="${hotline}" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary px-4 rounded-pill">
-                                    <i class="bi bi-save me-1"></i> Lưu thông tin
-                                </button>
-                            </form>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">TÊN HỆ THỐNG</label>
+                                <div class="readonly-value" th:text="${systemName}"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">EMAIL HỖ TRỢ KỸ THUẬT</label>
+                                <div class="readonly-value" th:text="${contactEmail}"></div>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label fw-bold small text-muted">HOTLINE HỖ TRỢ</label>
+                                <div class="readonly-value" th:text="${hotline}"></div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 2. QUY ĐỊNH MƯỢN PHÒNG -->
-                    <div class="col-lg-6">
+                    <div class="settings-flow-item">
                         <div class="settings-card">
                             <div class="settings-header">
                                 <div class="settings-icon icon-purple">
@@ -149,24 +168,19 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-0">Quy định mượn phòng</h5>
-                                    <small class="text-muted">Giới hạn và thiết lập quyền cho sinh viên</small>
+                                    <small class="text-muted">Bật hoặc tắt các luồng xử lý tự động</small>
                                 </div>
                             </div>
                             <form th:action="@{/admin/settings/rules}" method="post">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">SỐ CA MƯỢN TỐI ĐA / NGÀY</label>
-                                    <input type="number" name="maxShiftsPerDay" class="form-control" th:value="${maxShiftsPerDay}" min="1" max="5" required>
-                                    <small class="text-muted">Giới hạn số ca 1 sinh viên được mượn trong 1 ngày</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold small text-muted">ĐẶT TRƯỚC TỐI ĐA (NGÀY)</label>
-                                    <input type="number" name="maxAdvanceDays" class="form-control" th:value="${maxAdvanceDays}" min="1" max="30" required>
-                                    <small class="text-muted">Cho phép sinh viên đăng ký trước tối đa bao nhiêu ngày</small>
-                                </div>
                                 <div class="mb-4 form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="autoApprove" id="autoApproveSwitch" th:checked="${autoApprove}">
                                     <label class="form-check-label fw-bold text-dark" for="autoApproveSwitch">Tự động duyệt yêu cầu mượn</label>
-                                    <div class="text-muted small">Nếu bật, đơn mượn sẽ tự động chuyển sang Đang mượn mà không cần Admin bấm Chấp nhận.</div>
+                                    <div class="text-muted small">Đơn mới chuyển thẳng sang trạng thái đã duyệt, không cần quản trị viên xác nhận.</div>
+                                </div>
+                                <div class="mb-4 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="autoReturn" id="autoReturnSwitch" th:checked="${autoReturn}">
+                                    <label class="form-check-label fw-bold text-dark" for="autoReturnSwitch">Tự động trả phòng</label>
+                                    <div class="text-muted small">Cho phép hệ thống tự động hoàn tất quy trình trả phòng.</div>
                                 </div>
                                 <button type="submit" class="btn btn-primary px-4 rounded-pill">
                                     <i class="bi bi-check2-circle me-1"></i> Áp dụng quy định
@@ -176,7 +190,7 @@
                     </div>
 
                     <!-- 3. ĐỔI MẬT KHẨU QUẢN TRỊ VIÊN -->
-                    <div class="col-lg-6">
+                    <div class="settings-flow-item">
                         <div class="settings-card">
                             <div class="settings-header">
                                 <div class="settings-icon icon-orange">
@@ -190,15 +204,15 @@
                             <form th:action="@{/admin/settings/password}" method="post">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold small text-muted">MẬT KHẨU HIỆN TẠI</label>
-                                    <input type="password" name="currentPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại" required>
+                                    <input type="password" name="currentPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại" autocomplete="current-password" required>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-bold small text-muted">MẬT KHẨU MỚI</label>
-                                    <input type="password" name="newPassword" class="form-control" placeholder="Nhập mật khẩu mới" required>
+                                    <input type="password" name="newPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" minlength="6" required>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-bold small text-muted">XÁC NHẬN MẬT KHẨU MỚI</label>
-                                    <input type="password" name="confirmPassword" class="form-control" placeholder="Nhập lại mật khẩu mới" required>
+                                    <input type="password" name="confirmPassword" class="form-control" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" minlength="6" required>
                                 </div>
                                 <button type="submit" class="btn btn-warning text-white px-4 rounded-pill">
                                     <i class="bi bi-shield-lock me-1"></i> Đổi mật khẩu
@@ -208,7 +222,7 @@
                     </div>
 
                     <!-- 4. SAO LƯU DỮ LIỆU -->
-                    <div class="col-lg-6">
+                    <div class="settings-flow-item">
                         <div class="settings-card">
                             <div class="settings-header">
                                 <div class="settings-icon icon-blue">

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài khoản - ClassHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <a th:href="@{/}">
+                    <img th:src="@{/assets/logo-text.png}" width="164" height="32" alt="ClassHub">
+                </a>
+            </div>
+            <div class="user-info">
+                <nav class="header-nav">
+                    <a th:href="@{/}" class="btn-nav" style="text-decoration:none">
+                        <i data-lucide="home"></i><span>Trang chủ</span>
+                    </a>
+                    <a th:href="@{/lich-su}" class="btn-nav" style="text-decoration:none">
+                        <i data-lucide="clock"></i><span>Lịch sử mượn</span>
+                    </a>
+                    <a th:href="@{/tai-khoan}" class="btn-nav active-nav" style="text-decoration:none">
+                        <i data-lucide="user-round-cog"></i><span>Tài khoản</span>
+                    </a>
+                    <a th:href="@{/admin/dashboard}"
+                       th:if="${session.loggedInUser != null and session.loggedInUser.vaiTro == 'ADMIN'}"
+                       class="btn-nav" style="text-decoration:none">
+                        <i data-lucide="shield-check"></i><span>Admin</span>
+                    </a>
+                </nav>
+                <div class="divider"></div>
+                <span class="user-greeting">
+                    Xin chào, <strong th:text="${account.hoTen}">Người dùng</strong>
+                </span>
+                <a th:href="@{/logout}" class="btn-logout" style="text-decoration:none">
+                    <i data-lucide="log-out"></i><span class="hide-text-mobile">Đăng xuất</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="account-page">
+            <div class="account-heading">
+                <div>
+                    <h2>Quản lý tài khoản</h2>
+                    <p>Cập nhật thông tin liên hệ và mật khẩu đăng nhập.</p>
+                </div>
+                <div class="account-avatar" th:text="${#strings.substring(account.hoTen, 0, 1)}">U</div>
+            </div>
+
+            <div th:if="${successMessage}" class="account-alert success-alert">
+                <i data-lucide="circle-check"></i><span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="account-alert error-alert">
+                <i data-lucide="triangle-alert"></i><span th:text="${errorMessage}"></span>
+            </div>
+
+            <div class="account-layout">
+                <article class="account-card">
+                    <div class="account-card-header">
+                        <i data-lucide="contact-round"></i>
+                        <div>
+                            <h3>Thông tin cá nhân</h3>
+                            <p>Mã tài khoản, họ tên và email chỉ có thể xem.</p>
+                        </div>
+                    </div>
+
+                    <div class="readonly-account-grid">
+                        <div class="account-field">
+                            <label>Mã tài khoản</label>
+                            <div class="account-readonly" th:text="${account.maSv}"></div>
+                        </div>
+                        <div class="account-field">
+                            <label>Vai trò</label>
+                            <div class="account-readonly" th:text="${account.vaiTro}"></div>
+                        </div>
+                        <div class="account-field full-width">
+                            <label>Họ và tên</label>
+                            <div class="account-readonly" th:text="${account.hoTen}"></div>
+                        </div>
+                        <div class="account-field full-width">
+                            <label>Email</label>
+                            <div class="account-readonly" th:text="${account.email}"></div>
+                        </div>
+                        <div class="account-field full-width">
+                            <label>Lớp / đơn vị</label>
+                            <div class="account-readonly" th:text="${account.tenLop != null ? account.tenLop : '-'}"></div>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/tai-khoan/phone}" method="post" class="account-form phone-form">
+                        <div class="account-field">
+                            <label for="phone">Số điện thoại</label>
+                            <input id="phone" type="tel" name="sdt" class="form-control"
+                                   th:value="${account.sdt}" inputmode="numeric" maxlength="11"
+                                   pattern="0[0-9]{9,10}" required>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i data-lucide="save"></i> Lưu số điện thoại
+                        </button>
+                    </form>
+                </article>
+
+                <article class="account-card">
+                    <div class="account-card-header">
+                        <i data-lucide="shield-keyhole"></i>
+                        <div>
+                            <h3>Đổi mật khẩu</h3>
+                            <p>Mật khẩu mới phải có ít nhất 6 ký tự.</p>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/tai-khoan/password}" method="post" class="account-form">
+                        <div class="account-field">
+                            <label for="currentPassword">Mật khẩu hiện tại</label>
+                            <input id="currentPassword" type="password" name="currentPassword"
+                                   class="form-control" autocomplete="current-password" required>
+                        </div>
+                        <div class="account-field">
+                            <label for="newPassword">Mật khẩu mới</label>
+                            <input id="newPassword" type="password" name="newPassword"
+                                   class="form-control" autocomplete="new-password" minlength="6" required>
+                        </div>
+                        <div class="account-field">
+                            <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                            <input id="confirmPassword" type="password" name="confirmPassword"
+                                   class="form-control" autocomplete="new-password" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i data-lucide="key-round"></i> Đổi mật khẩu
+                        </button>
+                    </form>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

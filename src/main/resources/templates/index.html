@@ -38,6 +38,14 @@
               <i data-lucide="clock"></i> <span>Lịch sử mượn</span>
             </a>
             <a
+              th:href="@{/tai-khoan}"
+              th:if="${session.loggedInUser != null}"
+              class="btn-nav"
+              style="text-decoration: none"
+            >
+              <i data-lucide="user-round-cog"></i> <span>Tài khoản</span>
+            </a>
+            <a
               th:href="@{/admin/dashboard}"
               th:if="${session.loggedInUser != null and session.loggedInUser.vaiTro == 'ADMIN'}"
               class="btn-nav"

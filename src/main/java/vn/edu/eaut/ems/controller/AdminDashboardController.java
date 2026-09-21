@@ -7,11 +7,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import jakarta.servlet.http.HttpSession;
 import vn.edu.eaut.ems.entity.Account;
 import vn.edu.eaut.ems.entity.Booking;
+import vn.edu.eaut.ems.entity.Room;
 import vn.edu.eaut.ems.repository.AccountRepository;
 import vn.edu.eaut.ems.repository.BookingRepository;
-import vn.edu.eaut.ems.repository.BuildingRepository;
 import vn.edu.eaut.ems.repository.RoomRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -20,16 +21,13 @@ public class AdminDashboardController {
     private final AccountRepository accountRepository;
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
-    private final BuildingRepository buildingRepository;
 
     public AdminDashboardController(AccountRepository accountRepository, 
                                     BookingRepository bookingRepository,
-                                    RoomRepository roomRepository,
-                                    BuildingRepository buildingRepository) {
+                                    RoomRepository roomRepository) {
         this.accountRepository = accountRepository;
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
-        this.buildingRepository = buildingRepository;
     }
 
     @GetMapping("/admin/dashboard")
@@ -50,21 +48,24 @@ public class AdminDashboardController {
         long totalStudents = accounts.stream()
                 .filter(a -> "SINHVIEN".equalsIgnoreCase(a.getVaiTro()) || "SINH_VIEN".equalsIgnoreCase(a.getVaiTro())).count();
         long totalTeachers = accounts.stream()
-                .filter(a -> "ADMIN".equalsIgnoreCase(a.getVaiTro()) || "GIANG_VIEN".equalsIgnoreCase(a.getVaiTro())).count();
+                .filter(a -> "GIANG_VIEN".equalsIgnoreCase(a.getVaiTro())).count();
 
         // Đếm phiếu mượn thật
         List<Booking> bookings = bookingRepository.findAll();
-        long totalBookings = bookings.size();
         long pendingBookings = bookings.stream()
                 .filter(b -> "CHO_DUYET".equalsIgnoreCase(b.getTrangThai())).count();
-        long activeBookings = bookings.stream()
-                .filter(b -> "DA_DUYET".equalsIgnoreCase(b.getTrangThai()) || "UY_QUYEN".equalsIgnoreCase(b.getTrangThai())).count();
-        long completedBookings = bookings.stream()
-                .filter(b -> "DA_TRA".equalsIgnoreCase(b.getTrangThai()) || "DA_TRA_HO".equalsIgnoreCase(b.getTrangThai())).count();
+        long todayBookings = bookings.stream()
+                .filter(b -> LocalDate.now().equals(b.getNgayMuon()))
+                .filter(b -> !"TU_CHOI".equalsIgnoreCase(b.getTrangThai()))
+                .count();
 
-        // Cơ sở vật chất thật (240 phòng & 5 tòa nhà)
-        long totalRooms = roomRepository.count();
-        long totalBuildings = buildingRepository.count();
+        List<Room> rooms = roomRepository.findAll();
+        long activeRooms = rooms.stream()
+                .filter(r -> "1".equalsIgnoreCase(r.getTrangThai()) || "DANG_DUNG".equalsIgnoreCase(r.getTrangThai()))
+                .count();
+        long maintenanceRooms = rooms.stream()
+                .filter(r -> "2".equalsIgnoreCase(r.getTrangThai()) || "BAO_TRI".equalsIgnoreCase(r.getTrangThai()))
+                .count();
 
         // 5 đơn mượn phòng mới nhất thật từ MySQL
         List<Booking> recentBookings = bookingRepository.findAllByOrderByThoiGianTaoDesc().stream()
@@ -83,13 +84,10 @@ public class AdminDashboardController {
         model.addAttribute("totalStudents", totalStudents);
         model.addAttribute("totalTeachers", totalTeachers);
 
-        model.addAttribute("totalRooms", totalRooms);
-        model.addAttribute("totalBuildings", totalBuildings);
-
-        model.addAttribute("totalBookings", totalBookings);
         model.addAttribute("pendingBookings", pendingBookings);
-        model.addAttribute("activeBookings", activeBookings);
-        model.addAttribute("completedBookings", completedBookings);
+        model.addAttribute("todayBookings", todayBookings);
+        model.addAttribute("activeRooms", activeRooms);
+        model.addAttribute("maintenanceRooms", maintenanceRooms);
 
         model.addAttribute("recentBookings", recentBookings);
         model.addAttribute("recentAccounts", recentAccounts);

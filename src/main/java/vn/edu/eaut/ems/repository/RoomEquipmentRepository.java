@@ -6,4 +6,5 @@ import vn.edu.eaut.ems.entity.RoomEquipment;
 import vn.edu.eaut.ems.entity.RoomEquipmentId;
 
 public interface RoomEquipmentRepository extends JpaRepository<RoomEquipment, RoomEquipmentId> {
+    boolean existsByEquipment_Id(Integer equipmentId);
 }

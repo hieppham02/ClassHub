@@ -10,15 +10,46 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 
-    <!-- Thư viện Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <style>
         .chart-container {
             position: relative;
-            height: 320px;
+            min-height: 320px;
             width: 100%;
+            overflow: hidden;
         }
+        .report-filter {
+            width: 145px;
+        }
+        .dashboard-card {
+            min-width: 0;
+        }
+        .apexcharts-canvas,
+        .apexcharts-svg {
+            max-width: 100% !important;
+        }
+        @media (max-width: 767.98px) {
+            .chart-container { min-height: 280px; }
+            .report-chart-header { align-items: flex-start !important; }
+            .report-filter { width: 100%; }
+        }
+        .rank-badge {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 50%;
+            font-size: 0.85rem;
+        }
+        .rank-top1 { background: #fef08a; color: #854d0e; border: 2px solid #eab308; }
+        .rank-top2 { background: #e2e8f0; color: #334155; border: 2px solid #94a3b8; }
+        .rank-top3 { background: #fed7aa; color: #9a3412; border: 2px solid #f97316; }
+        .rank-other { background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; }
+
         @media print {
             .sidebar, .topbar, .btn-print {
                 display: none !important;
@@ -69,7 +100,7 @@
                 <div>
                     <button class="mobile-menu"><i class="bi bi-list"></i></button>
                     <h4>Báo cáo & Thống kê</h4>
-                    <small>Phân tích quy mô cơ sở vật chất và tần suất sử dụng phòng học</small>
+                    <small>Thống kê cơ cấu tỷ lệ phòng học giữa các tòa nhà và top phòng trống</small>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
@@ -136,7 +167,29 @@
                     </div>
                 </div>
 
-                <!-- 2 BIỂU ĐỒ -->
+                <!-- BIỂU ĐỒ LƯỢT MƯỢN THEO NGÀY -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="dashboard-card">
+                            <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-3 report-chart-header">
+                                <div>
+                                    <h5 class="mb-1">Lượt mượn theo ngày</h5>
+                                    <span class="text-muted small">Theo dõi xu hướng đăng ký mượn phòng gần đây</span>
+                                </div>
+                                <select id="daily-range-filter" class="form-select form-select-sm report-filter" aria-label="Khoảng thời gian thống kê">
+                                    <option value="7" selected>7 ngày</option>
+                                    <option value="14">14 ngày</option>
+                                    <option value="30">30 ngày</option>
+                                </select>
+                            </div>
+                            <div class="p-3">
+                                <div id="dailyBookingChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BIỂU ĐỒ THEO CA VÀ TÒA NHÀ -->
                 <div class="row g-4 mb-4">
                     <!-- Biểu đồ cột: Theo Ca học -->
                     <div class="col-lg-7">
@@ -147,69 +200,101 @@
                             </div>
                             <div class="p-3">
                                 <div class="chart-container">
-                                    <canvas id="shiftChart"></canvas>
+                                    <div id="shiftChart"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ================= BIỂU ĐỒ TRÒN: TỶ TRỌNG SỐ LƯỢNG PHÒNG HỌC (%) ================= -->
+                    <!-- ================= BIỂU ĐỒ TRÒN: TỶ LỆ (%) SỐ LƯỢNG PHÒNG TỪNG TÒA CHIẾM ================= -->
                     <div class="col-lg-5">
                         <div class="dashboard-card h-100">
                             <div class="card-header py-3">
-                                <h5 class="mb-0">Quy mô phòng theo Tòa nhà (%)</h5>
+                                <h5 class="mb-0">Cơ cấu số lượng phòng theo Tòa nhà (%)</h5>
                             </div>
                             <div class="p-3">
                                 <div class="chart-container">
-                                    <canvas id="buildingChart"></canvas>
+                                    <div id="buildingChart"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- BẢNG TOP PHÒNG HỌC CÒN TRỐNG -->
+                <!-- BẢNG PHÒNG TRỐNG (CÓ BỘ LỌC TÒA NHÀ) -->
                 <div class="row">
                     <div class="col-12">
                         <div class="dashboard-card">
-                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
                                 <div>
-                                    <h5 class="mb-1 text-success"><i class="bi bi-check-circle-fill me-1"></i> Danh sách phòng học còn trống (Sẵn sàng sử dụng)</h5>
-                                    <span class="text-muted small">Các phòng học chưa có ai mượn, sẵn sàng bàn giao cho giảng viên & sinh viên</span>
+                                    <h5 class="mb-1 text-success"><i class="bi bi-trophy-fill text-warning me-1"></i> Bảng xếp hạng Top phòng học trống nhiều nhất (Top 1, 2, 3...)</h5>
+                                    <span class="text-muted small">Phòng trống 100% được ưu tiên lên đầu bảng để điều phối</span>
                                 </div>
-                                <span class="badge bg-success-subtle text-success border px-3 py-2">Khả dụng</span>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="small text-muted fw-bold text-nowrap"><i class="bi bi-funnel-fill text-primary"></i> Lọc Tòa:</label>
+                                    <select id="filter-free-building" class="form-select form-select-sm" style="width: 190px; font-weight: 500;">
+                                        <option value="ALL">Tất cả các tòa nhà</option>
+                                        <option value="Đinh Trọng Dật">Đinh Trọng Dật</option>
+                                        <option value="EAUT">EAUT</option>
+                                        <option value="POLYCO">POLYCO</option>
+                                        <option value="Thuận Thành">Thuận Thành</option>
+                                        <option value="Việt Nam Building">Việt Nam Building</option>
+                                    </select>
+                                </div>
                             </div>
+
                             <div class="table-responsive">
-                                <table class="table align-middle">
+                                <table class="table align-middle" id="table-free-rooms">
                                     <thead>
                                         <tr>
-                                            <th>STT</th>
+                                            <th>Xếp Hạng</th>
                                             <th>Mã Phòng</th>
                                             <th>Tên Phòng</th>
                                             <th>Tòa Nhà</th>
                                             <th>Sức Chứa</th>
-                                            <th>Khả Dụng Trong Ngày</th>
-                                            <th>Tình Trạng</th>
+                                            <th>Số Lần Bị Mượn</th>
+                                            <th>Độ Trống Khả Dụng</th>
+                                            <th>Đánh Giá</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr th:if="${#lists.isEmpty(freeRooms)}">
-                                            <td colspan="7" class="text-center py-4 text-muted">Hiện tại tất cả các phòng đều đang bận.</td>
+                                        <tr th:if="${#lists.isEmpty(topFreeRooms)}">
+                                            <td colspan="8" class="text-center py-4 text-muted">Chưa có dữ liệu phòng học.</td>
                                         </tr>
-                                        <tr th:each="r, stat : ${freeRooms}">
+                                        <tr th:each="r, stat : ${topFreeRooms}" th:attr="data-toanha=${r.toaNha}">
                                             <td>
-                                                <span class="badge rounded-circle p-2 bg-light text-dark border" th:text="${stat.index + 1}">1</span>
+                                                <span class="rank-badge"
+                                                      th:classappend="${stat.index == 0 ? 'rank-top1' : (stat.index == 1 ? 'rank-top2' : (stat.index == 2 ? 'rank-top3' : 'rank-other'))}"
+                                                      th:text="'#' + ${stat.index + 1}">
+                                                    #1
+                                                </span>
                                             </td>
                                             <td><strong class="text-primary" th:text="${r.maPhong}">DTD101</strong></td>
                                             <td><strong class="text-dark" th:text="${r.tenPhong}">DTD-101</strong></td>
                                             <td><span class="badge bg-light text-dark border fw-bold" th:text="${r.toaNha}">Đinh Trọng Dật</span></td>
                                             <td th:text="${r.sucChua} + ' chỗ'">70 chỗ</td>
+
                                             <td>
-                                                <span class="badge bg-primary-subtle text-primary border" th:text="${r.soCaTrong}">5/5 ca trống</span>
+                                                <span th:if="${r.bookedCount == 0}" class="badge bg-light text-muted border">0 lần (Chưa mượn)</span>
+                                                <span th:if="${r.bookedCount > 0}" class="badge bg-info-subtle text-info-emphasis border" th:text="${r.bookedCount} + ' lần'">1 lần</span>
                                             </td>
+
+                                            <td style="min-width: 150px;">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                                        <div class="progress-bar bg-success" th:style="'width: ' + ${r.vacancyRate}"></div>
+                                                    </div>
+                                                    <span class="fw-bold text-success" style="font-size: 0.85rem;" th:text="${r.vacancyRate}">100%</span>
+                                                </div>
+                                            </td>
+
                                             <td>
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
-                                                    <i class="bi bi-check2-circle"></i> Sẵn sàng 100%
+                                                <span th:if="${r.bookedCount == 0}" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                                    <i class="bi bi-star-fill text-warning me-1"></i> Ưu tiên Top 1
+                                                </span>
+                                                <span th:if="${r.bookedCount > 0}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill" th:text="${r.statusText}">
+                                                    Chỉ mượn 1 lần
                                                 </span>
                                             </td>
                                         </tr>
@@ -224,93 +309,91 @@
         </main>
     </div>
 
-    <!-- SCRIPT VẼ BIỂU ĐỒ VỚI HIỂN THỊ RÕ % QUY MÔ PHÒNG HỌC -->
+    <!-- Biểu đồ báo cáo bằng ApexCharts -->
     <script th:inline="javascript">
         const shiftData = /*[[${chartCaData}]]*/ [0, 0, 0, 0, 0];
         const buildingLabels = /*[[${chartBuildingLabels}]]*/ ['Đinh Trọng Dật', 'POLYCO', 'EAUT', 'Thuận Thành', 'Việt Nam Building'];
-        const buildingData = /*[[${chartBuildingData}]]*/ [48, 48, 48, 48, 48];
+        const buildingData = /*[[${chartBuildingData}]]*/ [0, 0, 0, 0, 0];
+        const dailyLabels = /*[[${chartDailyLabels}]]*/ [];
+        const dailyData = /*[[${chartDailyData}]]*/ [];
+        const integerLabel = value => Number.isInteger(value) ? value.toString() : '';
 
-        // 1. Biểu đồ cột theo Ca học
-        const ctxShift = document.getElementById('shiftChart').getContext('2d');
-        new Chart(ctxShift, {
-            type: 'bar',
-            data: {
-                labels: ['Ca 1 (07:00)', 'Ca 2 (09:30)', 'Ca 3 (13:00)', 'Ca 4 (15:30)', 'Ca 5 (18:00)'],
-                datasets: [{
-                    label: 'Số lượt mượn',
-                    data: shiftData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
+        const dailyChart = new ApexCharts(document.querySelector('#dailyBookingChart'), {
+            chart: { type: 'area', height: 300, fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            series: [{ name: 'Lượt mượn', data: dailyData.slice(-7) }],
+            xaxis: { categories: dailyLabels.slice(-7), labels: { rotate: -35, hideOverlappingLabels: true } },
+            yaxis: { min: 0, forceNiceScale: true, labels: { formatter: integerLabel } },
+            stroke: { curve: 'smooth', width: 3 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05, stops: [0, 90, 100] } },
+            dataLabels: { enabled: false },
+            colors: ['#2563eb'],
+            grid: { borderColor: '#e2e8f0' },
+            tooltip: { x: { show: true } },
+            noData: { text: 'Chưa có dữ liệu' }
+        });
+        dailyChart.render();
+
+        document.getElementById('daily-range-filter').addEventListener('change', function () {
+            const range = Number(this.value);
+            dailyChart.updateOptions({ xaxis: { categories: dailyLabels.slice(-range) } });
+            dailyChart.updateSeries([{ name: 'Lượt mượn', data: dailyData.slice(-range) }]);
         });
 
-        // 2. BIỂU ĐỒ TRÒN: HIỆN % SỐ PHÒNG MỖI TÒA NHÀ CHIẾM
-        const ctxBuilding = document.getElementById('buildingChart').getContext('2d');
-        new Chart(ctxBuilding, {
-            type: 'doughnut',
-            data: {
-                labels: buildingLabels,
-                datasets: [{
-                    data: buildingData,
-                    backgroundColor: [
-                        '#3b82f6', // Đinh Trọng Dật (Xanh dương)
-                        '#10b981', // POLYCO (Xanh lá)
-                        '#f59e0b', // EAUT (Vàng cam)
-                        '#8b5cf6', // Thuận Thành (Tím)
-                        '#ef4444'  // Việt Nam Building (Đỏ)
-                    ],
-                    borderWidth: 2
-                }]
+        new ApexCharts(document.querySelector('#shiftChart'), {
+            chart: { type: 'bar', height: 300, fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+            series: [{ name: 'Số lượt mượn', data: shiftData }],
+            xaxis: { categories: ['Ca 1 (07:00)', 'Ca 2 (09:30)', 'Ca 3 (13:00)', 'Ca 4 (15:30)', 'Ca 5 (18:00)'] },
+            yaxis: { min: 0, forceNiceScale: true, labels: { formatter: integerLabel } },
+            plotOptions: { bar: { borderRadius: 6, columnWidth: '48%' } },
+            dataLabels: { enabled: false },
+            colors: ['#3b82f6'],
+            grid: { borderColor: '#e2e8f0' },
+            noData: { text: 'Chưa có dữ liệu' }
+        }).render();
+
+        new ApexCharts(document.querySelector('#buildingChart'), {
+            chart: { type: 'donut', height: 300, fontFamily: 'Inter, sans-serif' },
+            labels: buildingLabels,
+            series: buildingData.map(Number),
+            colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'],
+            dataLabels: { enabled: true, formatter: value => `${value.toFixed(1)}%` },
+            legend: {
+                position: 'bottom',
+                formatter: (name, options) => `${name}: ${options.w.globals.series[options.seriesIndex]} phòng`
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    // HIỆN RÕ % TỶ TRỌNG PHÒNG TRONG CHÚ THÍCH
-                    legend: {
-                        position: 'bottom',
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '58%',
                         labels: {
-                            generateLabels: function(chart) {
-                                const data = chart.data;
-                                if (data.labels.length && data.datasets.length) {
-                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                    return data.labels.map((label, i) => {
-                                        const val = data.datasets[0].data[i];
-                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
-                                        return {
-                                            text: `${label}: ${pct} (${val} phòng)`,
-                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                            index: i
-                                        };
-                                    });
-                                }
-                                return [];
-                            }
-                        }
-                    },
-                    // RÊ CHUỘT VÀO VÒNG TRÒN HIỆN RÕ SỐ PHÒNG VÀ %
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const val = context.raw || 0;
-                                const total = context.chart._metasets[context.datasetIndex].total;
-                                const pct = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
-                                return ` ${label}: ${pct} (Tổng ${val} phòng học)`;
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Tổng phòng',
+                                formatter: chart => chart.globals.seriesTotals.reduce((sum, value) => sum + value, 0)
                             }
                         }
                     }
                 }
-            }
+            },
+            tooltip: { y: { formatter: value => `${value} phòng học` } },
+            noData: { text: 'Chưa có dữ liệu' },
+            responsive: [{ breakpoint: 576, options: { chart: { height: 340 }, legend: { position: 'bottom' } } }]
+        }).render();
+
+        // Lọc bảng theo tòa nhà
+        document.getElementById('filter-free-building')?.addEventListener('change', function() {
+            const selectedBuilding = this.value;
+            const rows = document.querySelectorAll('#table-free-rooms tbody tr');
+
+            rows.forEach(row => {
+                const rowToaNha = row.getAttribute('data-toanha');
+                if (selectedBuilding === 'ALL' || rowToaNha === selectedBuilding) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         });
     </script>
 
